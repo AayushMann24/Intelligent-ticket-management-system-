@@ -36,6 +36,7 @@ router = APIRouter(
 # Create Ticket
 # ==================================================
 @router.post("/", response_model=TicketResponse)
+@router.post("/", response_model=TicketResponse)
 def create_new_ticket(
     ticket: TicketCreate,
     db: Session = Depends(get_db),
