@@ -2,13 +2,15 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 
 from app.models.ticket import Ticket
-from app.schemas.ticket import TicketUpdate
 from app.models.user import User
+from app.schemas.ticket import TicketUpdate
+from app.constants.status import TICKET_STATUS
 
+
+# ==========================================
+# Create Ticket
+# ==========================================
 def create_ticket(db: Session, ticket_data, user_id: int):
-
-    print("Inside create_ticket()")
-    print("User ID:", user_id)
 
     new_ticket = Ticket(
         title=ticket_data.title,
@@ -17,35 +19,25 @@ def create_ticket(db: Session, ticket_data, user_id: int):
         created_by=user_id
     )
 
-    print("Ticket object created")
-
     db.add(new_ticket)
-
-    print("Added to session")
-
     db.commit()
-
-    print("Committed")
-
     db.refresh(new_ticket)
-
-    print("Refreshed")
 
     return new_ticket
 
 
+# ==========================================
+# Get All Tickets
+# ==========================================
 def get_all_tickets(db: Session):
-    tickets = db.query(Ticket).all()
-    return tickets
+    return db.query(Ticket).all()
 
-    db.add(new_ticket)
-    db.commit()
-    db.refresh(new_ticket)
 
-    return new_ticket
-from fastapi import HTTPException
-
+# ==========================================
+# Get Ticket By ID
+# ==========================================
 def get_ticket_by_id(db: Session, ticket_id: int):
+
     ticket = (
         db.query(Ticket)
         .filter(Ticket.id == ticket_id)
@@ -59,8 +51,11 @@ def get_ticket_by_id(db: Session, ticket_id: int):
         )
 
     return ticket
-from fastapi import HTTPException
 
+
+# ==========================================
+# Update Ticket
+# ==========================================
 def update_ticket(
     db: Session,
     ticket_id: int,
@@ -79,20 +74,31 @@ def update_ticket(
             detail="Ticket not found"
         )
 
+    # Validate Status
+    if ticket_data.status not in TICKET_STATUS:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid ticket status"
+        )
+
     ticket.title = ticket_data.title
     ticket.description = ticket_data.description
     ticket.priority = ticket_data.priority
     ticket.status = ticket_data.status
 
     db.commit()
-
     db.refresh(ticket)
 
     return ticket
 
-from fastapi import HTTPException
 
-def delete_ticket(db: Session, ticket_id: int):
+# ==========================================
+# Delete Ticket
+# ==========================================
+def delete_ticket(
+    db: Session,
+    ticket_id: int
+):
 
     ticket = (
         db.query(Ticket)
@@ -107,21 +113,22 @@ def delete_ticket(db: Session, ticket_id: int):
         )
 
     db.delete(ticket)
-
     db.commit()
 
     return {
         "message": "Ticket deleted successfully"
     }
 
-from fastapi import HTTPException
 
+# ==========================================
+# Assign Ticket
+# ==========================================
 def assign_ticket(
     db: Session,
     ticket_id: int,
     assigned_to: int
 ):
-    # Find the ticket
+
     ticket = (
         db.query(Ticket)
         .filter(Ticket.id == ticket_id)
@@ -134,7 +141,6 @@ def assign_ticket(
             detail="Ticket not found"
         )
 
-    # Find the user
     user = (
         db.query(User)
         .filter(User.id == assigned_to)
@@ -147,26 +153,31 @@ def assign_ticket(
             detail="User not found"
         )
 
-    # Only Admin or Technician can be assigned tickets
-    if user.role not in ["Technician", "Admin"]:
+    if user.role not in ["Admin", "Technician"]:
         raise HTTPException(
             status_code=400,
-            detail="Ticket can only be assigned to a Technician or Admin"
+            detail="Ticket can only be assigned to an Admin or Technician"
         )
 
-    # Assign the ticket
     ticket.assigned_to = assigned_to
 
-    db.commit()
+    # Automatically update status
+    ticket.status = "Assigned"
 
+    db.commit()
     db.refresh(ticket)
 
     return ticket
 
+
+# ==========================================
+# My Assigned Tickets
+# ==========================================
 def get_my_assigned_tickets(
     db: Session,
     user_id: int
 ):
+
     tickets = (
         db.query(Ticket)
         .filter(Ticket.assigned_to == user_id)
@@ -174,4 +185,39 @@ def get_my_assigned_tickets(
     )
 
     return tickets
-    
+    class TicketStatusUpdate(BaseModel):
+        status: str
+
+# ==========================================
+# Update Ticket Status
+# ==========================================
+def update_ticket_status(
+    db: Session,
+    ticket_id: int,
+    status: str
+):
+    ticket = (
+        db.query(Ticket)
+        .filter(Ticket.id == ticket_id)
+        .first()
+    )
+
+    if not ticket:
+        raise HTTPException(
+            status_code=404,
+            detail="Ticket not found"
+        )
+
+    # Validate status
+    if status not in TICKET_STATUS:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid ticket status"
+        )
+
+    ticket.status = status
+
+    db.commit()
+    db.refresh(ticket)
+
+    return ticket

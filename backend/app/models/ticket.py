@@ -23,7 +23,11 @@ class Ticket(Base):
 
     priority = Column(String, default="Medium")
 
-    status = Column(String, default="Open")
+    status = Column(
+    String,
+    nullable=False,
+    default="Open"
+    )
 
     # User who created the ticket
     created_by = Column(

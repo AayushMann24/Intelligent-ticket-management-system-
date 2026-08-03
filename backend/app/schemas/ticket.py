@@ -40,5 +40,11 @@ class TicketResponse(BaseModel):
     created_by: int
     assigned_to: int | None = None
 
-    class Config:
+class Config:
         from_attributes = True
+
+class TicketStatusUpdate(BaseModel):
+        status: str
+    
+class TicketStatusUpdate(BaseModel):
+        status: str

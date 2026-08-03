@@ -6,7 +6,7 @@ from app.routers import auth
 from app.dependencies.auth import verify_token
 from app.routers import ticket
 from app.routers.dashboard import router as dashboard_router
-
+from app.routers import user
 
 Base.metadata.create_all(bind=engine)
 
@@ -15,7 +15,7 @@ app = FastAPI()
 app.include_router(auth.router)
 app.include_router(ticket.router)
 app.include_router(dashboard_router)
-
+app.include_router(user.router)
 
 @app.get("/")
 def home():

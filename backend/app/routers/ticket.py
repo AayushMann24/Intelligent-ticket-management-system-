@@ -8,6 +8,7 @@ from app.schemas.ticket import (
     TicketResponse,
     TicketUpdate,
     TicketAssign,
+    TicketStatusUpdate,
 )
 
 from app.services.ticket_service import (
@@ -18,14 +19,15 @@ from app.services.ticket_service import (
     delete_ticket,
     assign_ticket,
     get_my_assigned_tickets,
+    update_ticket_status,   
 )
 
 from app.dependencies.roles import (
     require_admin,
     require_authenticated_user,
     require_technician,
+    require_admin_or_technician
 )
-
 router = APIRouter(
     prefix="/tickets",
     tags=["Tickets"]
@@ -134,6 +136,24 @@ def assign_ticket_to_user(
         assigned_to=ticket.assigned_to
     )
 
+# ==================================================
+# Ticket
+# ==================================================
+@router.patch(
+    "/{ticket_id}/status",
+    response_model=TicketResponse
+)
+def update_status(
+    ticket_id: int,
+    status_data: TicketStatusUpdate,
+    db: Session = Depends(get_db),
+    user=Depends(require_admin_or_technician)
+):
+    return update_ticket_status(
+        db,
+        ticket_id,
+        status_data.status
+    )
 
 # ==================================================
 # Delete Ticket
