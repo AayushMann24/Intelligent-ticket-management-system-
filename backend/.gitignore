@@ -1,4 +1,19 @@
-.env
+# Python
+.venv/
 __pycache__/
 *.pyc
-.venv/
+
+# Environment
+.env
+
+# Archives
+*.zip
+*.rar
+*.7z
+
+# Node
+node_modules/
+
+# Build
+dist/
+build/
