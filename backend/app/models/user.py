@@ -10,4 +10,4 @@ class User(Base):
     password = Column(String, nullable=False)
     role = Column(String, nullable=False, default="Employee")
     created_at = Column(DateTime, default=datetime.utcnow)
-
+    role = Column(String, default="Employee")
