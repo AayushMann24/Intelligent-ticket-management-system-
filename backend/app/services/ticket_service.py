@@ -186,8 +186,7 @@ def get_my_assigned_tickets(
     )
 
     return tickets
-    class TicketStatusUpdate(BaseModel):
-        status: str
+
 
 # ==========================================
 # Update Ticket Status

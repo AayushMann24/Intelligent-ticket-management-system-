@@ -1,6 +1,10 @@
 from agents.tools import (
     get_all_tickets_tool,
-    create_ticket_tool
+    create_ticket_tool,
+    get_ticket_by_id_tool,
+    assign_ticket_tool,
+    update_ticket_tool,
+    delete_ticket_tool,
 )
 
 print(
@@ -32,6 +36,26 @@ print(
         {
             "ticket_id": 3,
             "assigned_to": 2
+        }
+    )
+)
+
+print(
+    update_ticket_tool.invoke(
+        {
+            "ticket_id": 3,
+            "title": "Updated AI Ticket",
+            "description": "Updated by LangChain",
+            "priority": "High",
+            "status": "Assigned",
+        }
+    )
+)
+
+print(
+    delete_ticket_tool.invoke(
+        {
+            "ticket_id": 6
         }
     )
 )

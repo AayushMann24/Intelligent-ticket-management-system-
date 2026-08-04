@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from app.models.ticket import Ticket
-
+from app.models.user import User
 
 def get_dashboard_summary(db: Session):
 

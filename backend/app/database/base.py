@@ -1,3 +1,5 @@
-from sqlalchemy.orm import declarative_base
+from app.database.connection import Base
 
-Base = declarative_base()
+# Import all models so SQLAlchemy registers them
+from app.models.user import User
+from app.models.ticket import Ticket

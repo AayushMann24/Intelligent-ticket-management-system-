@@ -46,5 +46,3 @@ class Config:
 class TicketStatusUpdate(BaseModel):
         status: str
     
-class TicketStatusUpdate(BaseModel):
-        status: str

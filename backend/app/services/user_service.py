@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 
 from app.models.user import User
-
+from app.models.ticket import Ticket
 # ==========================================
 # Get All Users
 # ==========================================
