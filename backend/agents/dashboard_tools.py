@@ -6,6 +6,7 @@ from app.services.dashboard_service import (
     get_dashboard_summary,
     get_recent_tickets,
     get_priority_summary,
+    get_ticket_trend,
 )
 
 

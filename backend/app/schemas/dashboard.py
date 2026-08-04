@@ -4,8 +4,12 @@ from pydantic import BaseModel
 class DashboardSummary(BaseModel):
     total_tickets: int
     open_tickets: int
-    in_progress_tickets: int
+    assigned_tickets: int
     resolved_tickets: int
+
+    high_priority: int
+    medium_priority: int
+    low_priority: int
 
 class RecentTicketResponse(BaseModel):
     id: int
