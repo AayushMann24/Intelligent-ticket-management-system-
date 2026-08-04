@@ -23,29 +23,35 @@ export default function useDashboard() {
   const [loading, setLoading] =
     useState(true);
 
+  const loadDashboard = async () => {
+    try {
+      const [
+        summaryResponse,
+        recentTicketsResponse,
+        trendResponse,
+      ] = await Promise.all([
+        getDashboardSummary(),
+        getRecentTickets(),
+        getTicketTrend(),
+      ]);
+
+      console.log("Dashboard Summary:", summaryResponse);
+      console.log("Recent Tickets:", recentTicketsResponse);
+      console.log("Trend Data:", trendResponse);
+
+      setSummary(summaryResponse);
+      setRecentTickets(recentTicketsResponse);
+      setTrendData(trendResponse);
+      console.log("Trend Response:", trendResponse);
+
+    } catch (error) {
+      console.error("Failed to load dashboard:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadDashboard = async () => {
-      try {
-        const [
-          summaryResponse,
-          recentTicketsResponse,
-          trendResponse,
-        ] = await Promise.all([
-          getDashboardSummary(),
-          getRecentTickets(),
-          getTicketTrend(),
-        ]);
-
-        setSummary(summaryResponse);
-        setRecentTickets(recentTicketsResponse);
-        setTrendData(trendResponse);
-      } catch (error) {
-        console.error("Failed to load dashboard:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadDashboard();
   }, []);
 
@@ -70,5 +76,6 @@ export default function useDashboard() {
     trendData,
     priorityData,
     loading,
+    reloadDashboard: loadDashboard,
   };
 }

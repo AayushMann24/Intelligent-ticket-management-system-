@@ -25,6 +25,7 @@ export default function DashboardPage() {
     trendData,
     loading,
   } = useDashboard();
+  console.log("Dashboard trendData:", trendData);
 
   if (loading) {
     return (
