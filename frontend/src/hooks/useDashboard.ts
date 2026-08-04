@@ -8,7 +8,7 @@ import {
 
 import type { DashboardSummary } from "../types/dashboard";
 import type { Ticket } from "../types/ticket";
-import type { TrendData } from "../services/dashboardService";
+import type { TrendData } from "../types/trend";
 
 export default function useDashboard() {
   const [summary, setSummary] =
@@ -17,58 +17,58 @@ export default function useDashboard() {
   const [recentTickets, setRecentTickets] =
     useState<Ticket[]>([]);
 
-  const [trend, setTrend] =
+  const [trendData, setTrendData] =
     useState<TrendData[]>([]);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] =
+    useState(true);
 
   useEffect(() => {
-    async function loadDashboard() {
+    const loadDashboard = async () => {
       try {
         const [
-          summaryData,
-          recentData,
-          trendData,
+          summaryResponse,
+          recentTicketsResponse,
+          trendResponse,
         ] = await Promise.all([
           getDashboardSummary(),
           getRecentTickets(),
           getTicketTrend(),
         ]);
 
-        setSummary(summaryData);
-        setRecentTickets(recentData);
-        setTrend(trendData);
-
+        setSummary(summaryResponse);
+        setRecentTickets(recentTicketsResponse);
+        setTrendData(trendResponse);
       } catch (error) {
         console.error("Failed to load dashboard:", error);
       } finally {
         setLoading(false);
       }
-    }
+    };
 
     loadDashboard();
   }, []);
 
+  const priorityData = [
+    {
+      name: "High",
+      value: summary?.high_priority ?? 0,
+    },
+    {
+      name: "Medium",
+      value: summary?.medium_priority ?? 0,
+    },
+    {
+      name: "Low",
+      value: summary?.low_priority ?? 0,
+    },
+  ];
+
   return {
     summary,
     recentTickets,
-    trend,
-
-    priorityData: [
-      {
-        name: "High",
-        value: summary?.high_priority ?? 0,
-      },
-      {
-        name: "Medium",
-        value: summary?.medium_priority ?? 0,
-      },
-      {
-        name: "Low",
-        value: summary?.low_priority ?? 0,
-      },
-    ],
-
+    trendData,
+    priorityData,
     loading,
   };
 }

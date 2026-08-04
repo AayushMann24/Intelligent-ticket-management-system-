@@ -10,60 +10,32 @@ from app.models.ticket import Ticket
 
 def get_dashboard_summary(db: Session):
 
-    total = db.query(Ticket).count()
-
-    open_count = (
-        db.query(Ticket)
-        .filter(Ticket.status == "Open")
-        .count()
-    )
-
-    assigned_count = (
-        db.query(Ticket)
-        .filter(Ticket.status == "Assigned")
-        .count()
-    )
-
-    resolved_count = (
-        db.query(Ticket)
-        .filter(Ticket.status == "Resolved")
-        .count()
-    )
-
-    high = (
-        db.query(Ticket)
-        .filter(Ticket.priority == "High")
-        .count()
-    )
-
-    medium = (
-        db.query(Ticket)
-        .filter(Ticket.priority == "Medium")
-        .count()
-    )
-
-    low = (
-        db.query(Ticket)
-        .filter(Ticket.priority == "Low")
-        .count()
-    )
-
     return {
+        "total_tickets": db.query(Ticket).count(),
 
-        "total_tickets": total,
+        "open_tickets": db.query(Ticket)
+        .filter(Ticket.status == "Open")
+        .count(),
 
-        "open_tickets": open_count,
+        "assigned_tickets": db.query(Ticket)
+        .filter(Ticket.status == "Assigned")
+        .count(),
 
-        "assigned_tickets": assigned_count,
+        "resolved_tickets": db.query(Ticket)
+        .filter(Ticket.status == "Resolved")
+        .count(),
 
-        "resolved_tickets": resolved_count,
+        "high_priority": db.query(Ticket)
+        .filter(Ticket.priority == "High")
+        .count(),
 
-        "high_priority": high,
+        "medium_priority": db.query(Ticket)
+        .filter(Ticket.priority == "Medium")
+        .count(),
 
-        "medium_priority": medium,
-
-        "low_priority": low,
-
+        "low_priority": db.query(Ticket)
+        .filter(Ticket.priority == "Low")
+        .count(),
     }
 
 
@@ -92,65 +64,31 @@ def get_priority_summary(db: Session):
 
     return {
 
-        "high": (
-            db.query(Ticket)
-            .filter(Ticket.priority == "High")
-            .count()
-        ),
+        "high": db.query(Ticket)
+        .filter(Ticket.priority == "High")
+        .count(),
 
-        "medium": (
-            db.query(Ticket)
-            .filter(Ticket.priority == "Medium")
-            .count()
-        ),
+        "medium": db.query(Ticket)
+        .filter(Ticket.priority == "Medium")
+        .count(),
 
-        "low": (
-            db.query(Ticket)
-            .filter(Ticket.priority == "Low")
-            .count()
-        ),
+        "low": db.query(Ticket)
+        .filter(Ticket.priority == "Low")
+        .count(),
 
     }
 
 
 # ==========================================
-# Weekly Ticket Trend
+# Ticket Trend
 # ==========================================
 
 def get_ticket_trend(db: Session):
 
     result = (
         db.query(
-            func.date(Ticket.created_at),
-            func.count(Ticket.id)
-        )
-        .group_by(func.date(Ticket.created_at))
-        .order_by(func.date(Ticket.created_at))
-        .all()
-    )
-
-    return [
-
-        {
-
-            "date": str(date),
-
-            "tickets": count,
-
-        }
-
-        for date, count in result
-
-    ]
-from sqlalchemy import func
-from app.models.ticket import Ticket
-
-
-def get_ticket_trend(db):
-    results = (
-        db.query(
             func.date(Ticket.created_at).label("date"),
-            func.count(Ticket.id).label("count"),
+            func.count(Ticket.id).label("tickets"),
         )
         .group_by(func.date(Ticket.created_at))
         .order_by(func.date(Ticket.created_at))
@@ -160,7 +98,7 @@ def get_ticket_trend(db):
     return [
         {
             "date": str(row.date),
-            "tickets": row.count,
+            "tickets": row.tickets,
         }
-        for row in results
+        for row in result
     ]

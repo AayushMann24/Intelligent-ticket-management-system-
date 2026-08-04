@@ -18,14 +18,13 @@ import MainLayout from "../layouts/MainLayout";
 import useDashboard from "../hooks/useDashboard";
 
 export default function DashboardPage() {
-
-const {
+  const {
     summary,
     recentTickets,
     priorityData,
-    trend,
+    trendData,
     loading,
-} = useDashboard();;
+  } = useDashboard();
 
   if (loading) {
     return (
@@ -100,19 +99,23 @@ const {
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
 
-        <PriorityChart 
-        data={priorityData}
+        <PriorityChart
+          data={priorityData}
         />
 
-        <RecentTickets tickets={recentTickets} />
+        <RecentTickets
+          tickets={recentTickets}
+        />
 
       </div>
 
-      {/* Trend + Activity */}
+      {/* Ticket Trend + Activity */}
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
 
-        <TicketTrendChart  data={trend} />
+        <TicketTrendChart
+          data={trendData}
+        />
 
         <ActivityFeed />
 

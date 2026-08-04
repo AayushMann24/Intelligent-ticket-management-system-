@@ -2,13 +2,16 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database.connection import get_db
-
 from app.schemas.dashboard import DashboardSummary
+
 from app.services.dashboard_service import (
     get_dashboard_summary,
     get_recent_tickets,
     get_ticket_trend,
-    get_recent_activity
+)
+
+from app.services.activity_service import (
+    get_recent_activity,
 )
 
 router = APIRouter(
@@ -26,18 +29,11 @@ def dashboard_summary(
 ):
     return get_dashboard_summary(db)
 
-from app.database.connection import get_db
-from app.services.dashboard_service import get_recent_tickets
-
-from sqlalchemy.orm import Session
-from fastapi import Depends
-
 
 @router.get("/recent-tickets")
 def recent_tickets(
     db: Session = Depends(get_db),
 ):
-
     tickets = get_recent_tickets(db)
 
     return [
@@ -50,12 +46,17 @@ def recent_tickets(
         }
         for ticket in tickets
     ]
+
+
 @router.get("/trend")
 def ticket_trend(
     db: Session = Depends(get_db),
 ):
     return get_ticket_trend(db)
 
+
 @router.get("/activity")
-def activity(db: Session = Depends(get_db)):
+def activity(
+    db: Session = Depends(get_db),
+):
     return get_recent_activity(db)
