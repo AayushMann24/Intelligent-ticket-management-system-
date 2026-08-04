@@ -7,7 +7,8 @@ from app.dependencies.auth import verify_token
 from app.routers import ticket
 from app.routers.dashboard import router as dashboard_router
 from app.routers import user
-
+import app.models.user
+import app.models.ticket
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()

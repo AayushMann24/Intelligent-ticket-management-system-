@@ -30,7 +30,8 @@ def create_ticket(db: Session, ticket_data, user_id: int):
 # Get All Tickets
 # ==========================================
 def get_all_tickets(db: Session):
-    return db.query(Ticket).all()
+    tickets = db.query(Ticket).all()
+    return tickets
 
 
 # ==========================================

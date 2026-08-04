@@ -1,5 +1,3 @@
-from app.database.connection import Base
+from sqlalchemy.orm import declarative_base
 
-from app.models.user import User
-
-from app.models.ticket import Ticket
+Base = declarative_base()

@@ -1,13 +1,8 @@
-from typing import TypedDict, List
-from langchain_core.messages import BaseMessage
+from typing import Annotated, TypedDict
+
+from langgraph.graph.message import add_messages
 
 
 class AgentState(TypedDict):
-    """
-    Shared state passed between all agents.
-    """
-
-    query: str
-    response: str
-    next_agent: str
-    messages: List[BaseMessage]
+    messages: Annotated[list, add_messages]
+    next: str
