@@ -49,3 +49,10 @@ def profile(user=Depends(verify_token)):
         "message": "Login Successful",
         "user": user
     }
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+print("SECRET_KEY:", os.getenv("SECRET_KEY"))
+print("ALGORITHM:", os.getenv("ALGORITHM"))

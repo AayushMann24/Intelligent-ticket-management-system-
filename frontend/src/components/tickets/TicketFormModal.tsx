@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import useUsers from "../../hooks/useUsers";
 
 import type { Ticket } from "../../types/ticket";
+import type { User } from "../../types/user";
 
 interface TicketFormModalProps {
   open: boolean;
@@ -25,69 +26,44 @@ export default function TicketFormModal({
   onClose,
   onSubmit,
 }: TicketFormModalProps) {
-
-  const users = useUsers();
+  const { users, loading } = useUsers();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
-  const [priority, setPriority] =
-    useState("Medium");
+  const [priority, setPriority] = useState("Medium");
 
-  const [status, setStatus] =
-    useState("Open");
+  const [status, setStatus] = useState("Open");
 
   const [assignedTo, setAssignedTo] =
     useState<number | null>(null);
 
   useEffect(() => {
-
     if (ticket) {
-
       setTitle(ticket.title);
-
       setDescription(ticket.description);
-
       setPriority(ticket.priority);
-
       setStatus(ticket.status);
-
       setAssignedTo(ticket.assigned_to);
-
     } else {
-
       setTitle("");
-
       setDescription("");
-
       setPriority("Medium");
-
       setStatus("Open");
-
       setAssignedTo(null);
-
     }
-
   }, [ticket]);
 
   if (!open) return null;
 
   return (
-
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-
       <div className="w-full max-w-xl rounded-xl bg-zinc-900 p-6">
-
         <h2 className="mb-6 text-2xl font-bold text-white">
-
-          {ticket
-            ? "Edit Ticket"
-            : "Create Ticket"}
-
+          {ticket ? "Edit Ticket" : "Create Ticket"}
         </h2>
 
         <div className="space-y-4">
-
           <input
             value={title}
             onChange={(e) =>
@@ -114,18 +90,9 @@ export default function TicketFormModal({
             }
             className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-3 text-white"
           >
-            <option value="High">
-              High
-            </option>
-
-            <option value="Medium">
-              Medium
-            </option>
-
-            <option value="Low">
-              Low
-            </option>
-
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
           </select>
 
           <select
@@ -135,18 +102,9 @@ export default function TicketFormModal({
             }
             className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-3 text-white"
           >
-            <option value="Open">
-              Open
-            </option>
-
-            <option value="Assigned">
-              Assigned
-            </option>
-
-            <option value="Resolved">
-              Resolved
-            </option>
-
+            <option value="Open">Open</option>
+            <option value="Assigned">Assigned</option>
+            <option value="Resolved">Resolved</option>
           </select>
 
           <select
@@ -160,31 +118,26 @@ export default function TicketFormModal({
             }
             className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-3 text-white"
           >
-
             <option value="">
               Unassigned
             </option>
 
-            {users.map((user) => (
-
-              <option
-                key={user.id}
-                value={user.id}
-              >
-                {user.name}
-              </option>
-
-            ))}
-
+            {!loading &&
+              users.map((user: User) => (
+                <option
+                  key={user.id}
+                  value={user.id}
+                >
+                  {user.name}
+                </option>
+              ))}
           </select>
-
         </div>
 
         <div className="mt-8 flex justify-end gap-3">
-
           <button
             onClick={onClose}
-            className="rounded-lg bg-zinc-700 px-5 py-2 text-white"
+            className="rounded-lg bg-zinc-700 px-5 py-2 text-white hover:bg-zinc-600"
           >
             Cancel
           </button>
@@ -203,12 +156,8 @@ export default function TicketFormModal({
           >
             Save
           </button>
-
         </div>
-
       </div>
-
     </div>
-
   );
 }

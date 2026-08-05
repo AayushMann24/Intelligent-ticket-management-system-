@@ -4,21 +4,25 @@ import {
   getDashboardSummary,
   getRecentTickets,
   getTicketTrend,
+  getRecentActivity,
+  type DashboardSummary,
+  type RecentTicket,
+  type TicketTrend,
+  type Activity,
 } from "../services/dashboardService";
-
-import type { DashboardSummary } from "../types/dashboard";
-import type { Ticket } from "../types/ticket";
-import type { TrendData } from "../types/trend";
 
 export default function useDashboard() {
   const [summary, setSummary] =
     useState<DashboardSummary | null>(null);
 
   const [recentTickets, setRecentTickets] =
-    useState<Ticket[]>([]);
+    useState<RecentTicket[]>([]);
 
   const [trendData, setTrendData] =
-    useState<TrendData[]>([]);
+    useState<TicketTrend[]>([]);
+
+  const [activity, setActivity] =
+    useState<Activity[]>([]);
 
   const [loading, setLoading] =
     useState(true);
@@ -26,19 +30,21 @@ export default function useDashboard() {
   const loadDashboard = async () => {
     try {
       const [
-        summaryResponse,
-        recentTicketsResponse,
-        trendResponse,
+        summaryData,
+        ticketsData,
+        trend,
+        activityData,
       ] = await Promise.all([
         getDashboardSummary(),
         getRecentTickets(),
         getTicketTrend(),
+        getRecentActivity(),
       ]);
 
-      setSummary(summaryResponse);
-      setRecentTickets(recentTicketsResponse);
-      setTrendData(trendResponse);
-
+      setSummary(summaryData);
+      setRecentTickets(ticketsData);
+      setTrendData(trend);
+      setActivity(activityData);
     } catch (error) {
       console.error("Failed to load dashboard:", error);
     } finally {
@@ -47,39 +53,32 @@ export default function useDashboard() {
   };
 
   useEffect(() => {
-    // Initial Load
     loadDashboard();
-
-    // Auto Refresh Every 30 Seconds
-    const interval = setInterval(() => {
-      loadDashboard();
-    }, 30000);
-
-    // Cleanup
-    return () => clearInterval(interval);
-
   }, []);
 
-  const priorityData = [
-    {
-      name: "High",
-      value: summary?.high_priority ?? 0,
-    },
-    {
-      name: "Medium",
-      value: summary?.medium_priority ?? 0,
-    },
-    {
-      name: "Low",
-      value: summary?.low_priority ?? 0,
-    },
-  ];
+  const priorityData = summary
+    ? [
+        {
+          name: "High",
+          value: summary.high_priority,
+        },
+        {
+          name: "Medium",
+          value: summary.medium_priority,
+        },
+        {
+          name: "Low",
+          value: summary.low_priority,
+        },
+      ]
+    : [];
 
   return {
     summary,
     recentTickets,
-    trendData,
     priorityData,
+    trendData,
+    activity,
     loading,
     reloadDashboard: loadDashboard,
   };

@@ -1,24 +1,57 @@
 import axios from "axios";
 
+import type {
+  User,
+  UpdateRoleRequest,
+} from "../types/user";
+
 const API = "http://127.0.0.1:8000";
 
 const getToken = () => localStorage.getItem("token");
 
-export interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
+const authHeaders = () => ({
+  headers: {
+    Authorization: `Bearer ${getToken()}`,
+  },
+});
+
+// =====================================
+// Get All Users
+// =====================================
+export async function getUsers(): Promise<User[]> {
+  const response = await axios.get<User[]>(
+    `${API}/users`,
+    authHeaders()
+  );
+
+  return response.data;
 }
 
-export async function getUsers(): Promise<User[]> {
-  const response = await axios.get(
-    `${API}/users`,
-    {
-      headers: {
-        Authorization: `Bearer ${getToken()}`,
-      },
-    }
+// =====================================
+// Get User By ID
+// =====================================
+export async function getUserById(
+  userId: number
+): Promise<User> {
+  const response = await axios.get<User>(
+    `${API}/users/${userId}`,
+    authHeaders()
+  );
+
+  return response.data;
+}
+
+// =====================================
+// Update User Role
+// =====================================
+export async function updateUserRole(
+  userId: number,
+  role: UpdateRoleRequest
+): Promise<User> {
+  const response = await axios.put<User>(
+    `${API}/users/${userId}/role`,
+    role,
+    authHeaders()
   );
 
   return response.data;

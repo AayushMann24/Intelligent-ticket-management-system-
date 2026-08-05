@@ -1,10 +1,9 @@
 import { ArrowRight, Clock3, User } from "lucide-react";
-import type { Ticket } from "../../types/ticket";
+import type { RecentTicket } from "../../services/dashboardService";
 
 interface RecentTicketsProps {
-  tickets: Ticket[];
+  tickets: RecentTicket[];
 }
-
 function priorityColor(priority: string) {
   switch (priority) {
     case "High":

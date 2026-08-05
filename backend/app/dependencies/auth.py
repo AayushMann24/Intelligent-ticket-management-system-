@@ -39,8 +39,14 @@ def verify_token(
         }
 
     except JWTError as e:
-        print("JWT ERROR:", repr(e))
+        print("\n========== JWT ERROR ==========")
+        print(type(e).__name__)
+        print(str(e))
+        print("===============================\n")
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or Expired Token"
-        )
+
+    )
+    

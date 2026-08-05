@@ -8,10 +8,9 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-import type { TrendData } from "../../types/trend";
-
+import type { TicketTrend } from "../../services/dashboardService";
 interface TicketTrendChartProps {
-  data: TrendData[];
+  data: TicketTrend[];
 }
 
 export default function TicketTrendChart({
