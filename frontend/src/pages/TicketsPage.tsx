@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { Plus } from "lucide-react";
 
 import MainLayout from "../layouts/MainLayout";
 
 import useTickets from "../hooks/useTickets";
 
-import TicketTable from "../components/tickets/TicketTable";
 import TicketToolbar from "../components/tickets/TicketToolbar";
+import TicketTable from "../components/tickets/TicketTable";
 
 import TicketFormModal from "../components/tickets/TicketFormModal";
 import TicketDetailsModal from "../components/tickets/TicketDetailsModal";
@@ -28,9 +27,9 @@ export default function TicketsPage() {
     priority,
     setPriority,
 
-    removeTicket,
-    editTicket,
     addTicket,
+    editTicket,
+    removeTicket,
   } = useTickets();
 
   const [selectedTicket, setSelectedTicket] =
@@ -60,28 +59,9 @@ export default function TicketsPage() {
   return (
     <MainLayout>
 
-      {/* Header */}
-
-      <div className="mb-8 flex items-center justify-between">
-
-        <h1 className="text-3xl font-bold text-white">
-          Tickets
-        </h1>
-
-        <button
-          onClick={() => {
-            setSelectedTicket(null);
-            setIsFormOpen(true);
-          }}
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-        >
-          <Plus size={18} />
-          New Ticket
-        </button>
-
-      </div>
-
-      {/* Toolbar */}
+      <h1 className="mb-8 text-3xl font-bold text-white">
+        Ticket Management
+      </h1>
 
       <TicketToolbar
         search={search}
@@ -90,30 +70,27 @@ export default function TicketsPage() {
         setStatus={setStatus}
         priority={priority}
         setPriority={setPriority}
+        onCreate={() => {
+          setSelectedTicket(null);
+          setIsFormOpen(true);
+        }}
       />
-
-      {/* Table */}
 
       <TicketTable
         tickets={tickets}
-
         onView={(ticket) => {
           setSelectedTicket(ticket);
           setIsViewOpen(true);
         }}
-
         onEdit={(ticket) => {
           setSelectedTicket(ticket);
           setIsFormOpen(true);
         }}
-
         onDelete={(ticket) => {
           setSelectedTicket(ticket);
           setIsDeleteOpen(true);
         }}
       />
-
-      {/* Create / Edit */}
 
       <TicketFormModal
         open={isFormOpen}
@@ -143,15 +120,11 @@ export default function TicketsPage() {
         }}
       />
 
-      {/* View */}
-
       <TicketDetailsModal
         open={isViewOpen}
         ticket={selectedTicket}
         onClose={() => setIsViewOpen(false)}
       />
-
-      {/* Delete */}
 
       <DeleteConfirmModal
         open={isDeleteOpen}

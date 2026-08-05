@@ -1,4 +1,5 @@
 import type { Ticket } from "../../types/ticket";
+
 import {
   Eye,
   Pencil,
@@ -23,37 +24,67 @@ export default function TicketTable({
 }: TicketTableProps) {
   return (
     <div className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 shadow-lg">
+
       <table className="w-full">
-        <thead className="bg-zinc-800 text-left text-sm uppercase tracking-wide text-zinc-300">
-          <tr>
-            <th className="px-6 py-4">ID</th>
-            <th className="px-6 py-4">Title</th>
-            <th className="px-6 py-4">Priority</th>
-            <th className="px-6 py-4">Status</th>
-            <th className="px-6 py-4">Assigned To</th>
-            <th className="px-6 py-4">Created</th>
+
+        <thead className="bg-zinc-800">
+          <tr className="text-left text-sm uppercase tracking-wide text-zinc-300">
+
+            <th className="px-6 py-4">
+              ID
+            </th>
+
+            <th className="px-6 py-4">
+              Title
+            </th>
+
+            <th className="px-6 py-4">
+              Priority
+            </th>
+
+            <th className="px-6 py-4">
+              Status
+            </th>
+
+            <th className="px-6 py-4">
+              Assigned To
+            </th>
+
+            <th className="px-6 py-4">
+              Created
+            </th>
+
             <th className="px-6 py-4 text-center">
               Actions
             </th>
+
           </tr>
         </thead>
 
         <tbody>
+
           {tickets.length === 0 ? (
+
             <tr>
+
               <td
                 colSpan={7}
                 className="py-10 text-center text-zinc-500"
               >
                 No tickets found.
               </td>
+
             </tr>
+
           ) : (
+
             tickets.map((ticket) => (
+
               <tr
                 key={ticket.id}
                 className="border-t border-zinc-800 transition hover:bg-zinc-800/40"
               >
+
                 <td className="px-6 py-4 font-medium">
                   #{ticket.id}
                 </td>
@@ -71,7 +102,7 @@ export default function TicketTable({
                 </td>
 
                 <td className="px-6 py-4">
-                  {ticket.assigned_to || "Unassigned"}
+                  {ticket.assigned_to ?? "Unassigned"}
                 </td>
 
                 <td className="px-6 py-4">
@@ -81,6 +112,7 @@ export default function TicketTable({
                 </td>
 
                 <td className="px-6 py-4">
+
                   <div className="flex items-center justify-center gap-2">
 
                     <button
@@ -108,12 +140,19 @@ export default function TicketTable({
                     </button>
 
                   </div>
+
                 </td>
+
               </tr>
+
             ))
+
           )}
+
         </tbody>
+
       </table>
+
     </div>
   );
 }

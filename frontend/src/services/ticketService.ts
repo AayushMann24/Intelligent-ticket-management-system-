@@ -4,77 +4,120 @@ const API = "http://127.0.0.1:8000";
 
 const getToken = () => localStorage.getItem("token");
 
-// ===============================
-// Get All Tickets
-// ===============================
-export async function getAllTickets() {
-  const response = await axios.get(`${API}/tickets`, {
-    headers: {
-      Authorization: `Bearer ${getToken()}`,
-    },
-  });
+// ======================================
+// Axios Config
+// ======================================
+const authConfig = () => ({
+  headers: {
+    Authorization: `Bearer ${getToken()}`,
+  },
+});
 
-  return response.data;
-}
-
-// ===============================
-// Create Ticket
-// ===============================
-export async function createTicket(ticket: {
+// ======================================
+// Types
+// ======================================
+export interface TicketPayload {
   title: string;
   description: string;
   priority: string;
-}) {
-  const response = await axios.post(
+}
+
+export interface TicketUpdatePayload {
+  title: string;
+  description: string;
+  priority: string;
+  status: string;
+  assigned_to: number | null;
+}
+
+// ======================================
+// Get All Tickets
+// ======================================
+export async function getAllTickets() {
+  const response = await axios.get(
     `${API}/tickets`,
-    ticket,
-    {
-      headers: {
-        Authorization: `Bearer ${getToken()}`,
-      },
-    }
+    authConfig()
   );
 
   return response.data;
 }
 
-// ===============================
+// ======================================
+// Create Ticket
+// ======================================
+export async function createTicket(
+  ticket: TicketPayload
+) {
+  const response = await axios.post(
+    `${API}/tickets`,
+    ticket,
+    authConfig()
+  );
+
+  return response.data;
+}
+
+// ======================================
 // Update Ticket
-// ===============================
+// ======================================
 export async function updateTicket(
   ticketId: number,
-  ticket: {
-    title: string;
-    description: string;
-    priority: string;
-    status: string;
-    assigned_to: number | null;
-  }
+  ticket: TicketUpdatePayload
 ) {
   const response = await axios.put(
     `${API}/tickets/${ticketId}`,
     ticket,
-    {
-      headers: {
-        Authorization: `Bearer ${getToken()}`,
-      },
-    }
+    authConfig()
   );
 
   return response.data;
 }
 
-// ===============================
+// ======================================
 // Delete Ticket
-// ===============================
-export async function deleteTicket(ticketId: number) {
+// ======================================
+export async function deleteTicket(
+  ticketId: number
+) {
   const response = await axios.delete(
     `${API}/tickets/${ticketId}`,
+    authConfig()
+  );
+
+  return response.data;
+}
+
+// ======================================
+// Assign Technician
+// ======================================
+export async function assignTicket(
+  ticketId: number,
+  assignedTo: number
+) {
+  const response = await axios.put(
+    `${API}/tickets/${ticketId}/assign`,
     {
-      headers: {
-        Authorization: `Bearer ${getToken()}`,
-      },
-    }
+      assigned_to: assignedTo,
+    },
+    authConfig()
+  );
+
+  return response.data;
+}
+
+// ======================================
+// Update Ticket Status
+// ======================================
+export async function updateTicketStatus(
+  ticketId: number,
+  status: string
+) {
+  const response = await axios.patch(
+    `${API}/tickets/${ticketId}/status`,
+    {
+      status,
+    },
+    authConfig()
   );
 
   return response.data;

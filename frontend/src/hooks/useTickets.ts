@@ -1,10 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   getAllTickets,
-  deleteTicket,
-  updateTicket,
   createTicket,
+  updateTicket,
+  deleteTicket,
+  assignTicket,
+  updateTicketStatus,
+  type TicketPayload,
+  type TicketUpdatePayload,
 } from "../services/ticketService";
 
 import type { Ticket } from "../types/ticket";
@@ -17,16 +21,14 @@ export default function useTickets() {
   const [status, setStatus] = useState("");
   const [priority, setPriority] = useState("");
 
-  // ===============================
+  // ===================================
   // Load Tickets
-  // ===============================
+  // ===================================
   const loadTickets = async () => {
     try {
       setLoading(true);
 
       const data = await getAllTickets();
-
-      console.log("API Tickets:", data);
 
       setTickets(data);
     } catch (error) {
@@ -36,30 +38,30 @@ export default function useTickets() {
     }
   };
 
-  // ===============================
-  // Delete Ticket
-  // ===============================
-  const removeTicket = async (ticketId: number) => {
+  useEffect(() => {
+    loadTickets();
+  }, []);
+
+  // ===================================
+  // Create Ticket
+  // ===================================
+  const addTicket = async (
+    ticket: TicketPayload
+  ) => {
     try {
-      await deleteTicket(ticketId);
+      await createTicket(ticket);
       await loadTickets();
     } catch (error) {
-      console.error("Failed to delete ticket:", error);
+      console.error("Failed to create ticket:", error);
     }
   };
 
-  // ===============================
+  // ===================================
   // Edit Ticket
-  // ===============================
+  // ===================================
   const editTicket = async (
     ticketId: number,
-    updatedTicket: {
-      title: string;
-      description: string;
-      priority: string;
-      status: string;
-      assigned_to: number | null;
-    }
+    updatedTicket: TicketUpdatePayload
   ) => {
     try {
       await updateTicket(ticketId, updatedTicket);
@@ -69,48 +71,92 @@ export default function useTickets() {
     }
   };
 
-  // ===============================
-  // Create Ticket
-  // ===============================
-  const addTicket = async (ticket: {
-    title: string;
-    description: string;
-    priority: string;
-  }) => {
+  // ===================================
+  // Delete Ticket
+  // ===================================
+  const removeTicket = async (
+    ticketId: number
+  ) => {
     try {
-      await createTicket(ticket);
+      await deleteTicket(ticketId);
       await loadTickets();
     } catch (error) {
-      console.error("Failed to create ticket:", error);
+      console.error("Failed to delete ticket:", error);
     }
   };
 
-  useEffect(() => {
-    loadTickets();
-  }, []);
+  // ===================================
+  // Assign Technician
+  // ===================================
+  const assignTechnician = async (
+    ticketId: number,
+    technicianId: number
+  ) => {
+    try {
+      await assignTicket(
+        ticketId,
+        technicianId
+      );
 
-  // ===============================
+      await loadTickets();
+    } catch (error) {
+      console.error("Assignment failed:", error);
+    }
+  };
+
+  // ===================================
+  // Update Status
+  // ===================================
+  const changeStatus = async (
+    ticketId: number,
+    newStatus: string
+  ) => {
+    try {
+      await updateTicketStatus(
+        ticketId,
+        newStatus
+      );
+
+      await loadTickets();
+    } catch (error) {
+      console.error(
+        "Status update failed:",
+        error
+      );
+    }
+  };
+
+  // ===================================
   // Filter Tickets
-  // ===============================
-  const filteredTickets = tickets.filter((ticket) => {
-    const matchesSearch = ticket.title
-      .toLowerCase()
-      .includes(search.toLowerCase());
+  // ===================================
+  const filteredTickets = useMemo(() => {
+    return tickets.filter((ticket) => {
 
-    const matchesStatus =
-      status === "" || ticket.status === status;
+      const matchesSearch =
+        ticket.title
+          .toLowerCase()
+          .includes(search.toLowerCase());
 
-    const matchesPriority =
-      priority === "" || ticket.priority === priority;
+      const matchesStatus =
+        status === "" ||
+        ticket.status === status;
 
-    return (
-      matchesSearch &&
-      matchesStatus &&
-      matchesPriority
-    );
-  });
+      const matchesPriority =
+        priority === "" ||
+        ticket.priority === priority;
 
-  console.log("Filtered Tickets:", filteredTickets);
+      return (
+        matchesSearch &&
+        matchesStatus &&
+        matchesPriority
+      );
+    });
+  }, [
+    tickets,
+    search,
+    status,
+    priority,
+  ]);
 
   return {
     tickets: filteredTickets,
@@ -121,6 +167,9 @@ export default function useTickets() {
     addTicket,
     editTicket,
     removeTicket,
+
+    assignTechnician,
+    changeStatus,
 
     search,
     setSearch,
