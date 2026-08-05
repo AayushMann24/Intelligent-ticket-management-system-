@@ -22,7 +22,12 @@ export default function useTickets() {
   // ===============================
   const loadTickets = async () => {
     try {
+      setLoading(true);
+
       const data = await getAllTickets();
+
+      console.log("API Tickets:", data);
+
       setTickets(data);
     } catch (error) {
       console.error("Failed to load tickets:", error);
@@ -85,7 +90,7 @@ export default function useTickets() {
   }, []);
 
   // ===============================
-  // Filters
+  // Filter Tickets
   // ===============================
   const filteredTickets = tickets.filter((ticket) => {
     const matchesSearch = ticket.title
@@ -105,15 +110,17 @@ export default function useTickets() {
     );
   });
 
+  console.log("Filtered Tickets:", filteredTickets);
+
   return {
     tickets: filteredTickets,
     loading,
 
     reloadTickets: loadTickets,
 
-    removeTicket,
-    editTicket,
     addTicket,
+    editTicket,
+    removeTicket,
 
     search,
     setSearch,
