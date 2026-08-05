@@ -13,6 +13,9 @@ from agents.graph import graph
 from langchain_core.messages import HumanMessage
 
 
+# ==========================================
+# Create Ticket
+# ==========================================
 def create_ticket(
     db: Session,
     ticket_data,
@@ -39,23 +42,28 @@ Description:
         "title": ticket_data.title,
         "description": ticket_data.description,
 
+        # Database Session
+        "db": db,
+
+        # AI Ticket Analysis
         "category": None,
         "subcategory": None,
         "keywords": [],
-
         "confidence": None,
 
+        # AI Priority
         "priority": None,
         "priority_reason": None,
 
+        # AI Assignment
         "assigned_to": None,
         "assigned_name": None,
         "assignment_reason": None,
 
+        # Analytics
         "analytics": {},
 
         "final_response": None,
-
         "next": "",
     }
 
@@ -65,7 +73,9 @@ Description:
 
     ai_result = graph.invoke(state)
 
+    print("=" * 80)
     print(ai_result)
+    print("=" * 80)
 
     # =====================================
     # Save Ticket
@@ -73,63 +83,47 @@ Description:
 
     new_ticket = Ticket(
 
-    # =====================================
-    # Ticket Details
-    # =====================================
+        # Ticket Details
+        title=ticket_data.title,
+        description=ticket_data.description,
 
-    title=ticket_data.title,
+        # AI Analysis
+        category=ai_result.get("category"),
+        subcategory=ai_result.get("subcategory"),
+        keywords=ai_result.get("keywords"),
+        confidence=ai_result.get("confidence"),
 
-    description=ticket_data.description,
+        # AI Priority
+        priority=(
+            ai_result.get("priority")
+            or ticket_data.priority
+        ),
+        priority_reason=ai_result.get(
+            "priority_reason"
+        ),
 
-    # =====================================
-    # AI Ticket Analysis
-    # =====================================
+        # AI Assignment
+        assigned_to=ai_result.get(
+            "assigned_to"
+        ),
+        assignment_reason=ai_result.get(
+            "assignment_reason"
+        ),
 
-    category=ai_result.get("category"),
+        # AI Status
+        ai_processed=True,
 
-    subcategory=ai_result.get("subcategory"),
+        # Creator
+        created_by=user_id,
+    )
 
-    keywords=ai_result.get("keywords"),
+    db.add(new_ticket)
+    db.commit()
+    db.refresh(new_ticket)
 
-    confidence=ai_result.get("confidence"),
+    return new_ticket
 
-    # =====================================
-    # AI Priority
-    # =====================================
 
-    priority=(
-        ai_result.get("priority")
-        or ticket_data.priority
-    ),
-
-    priority_reason=ai_result.get(
-        "priority_reason"
-    ),
-
-    # =====================================
-    # AI Assignment
-    # =====================================
-
-    assigned_to=ai_result.get(
-        "assigned_to"
-    ),
-
-    assignment_reason=ai_result.get(
-        "assignment_reason"
-    ),
-
-    # =====================================
-    # AI Status
-    # =====================================
-
-    ai_processed=True,
-
-    # =====================================
-    # Creator
-    # =====================================
-
-    created_by=user_id,
-)
 
 # ==========================================
 # Get All Tickets

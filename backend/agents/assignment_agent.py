@@ -6,13 +6,13 @@ from agents.json_parser import parse_llm_json
 from agents.assignment_tools import get_technician_workload
 
 
-def assignment_agent(state, db):
+def assignment_agent(state):
     """
     Assignment Agent
 
     Uses real technicians from the database.
     """
-
+    db = state["db"]
     title = state["title"]
     description = state["description"]
 
