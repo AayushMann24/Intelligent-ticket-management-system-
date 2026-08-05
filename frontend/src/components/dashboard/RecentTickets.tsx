@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Clock3, User } from "lucide-react";
 import type { Ticket } from "../../types/ticket";
 
 interface RecentTicketsProps {
@@ -8,13 +8,13 @@ interface RecentTicketsProps {
 function priorityColor(priority: string) {
   switch (priority) {
     case "High":
-      return "bg-red-500/20 text-red-400";
+      return "bg-red-500/20 text-red-400 border border-red-500/30";
 
     case "Medium":
-      return "bg-yellow-500/20 text-yellow-400";
+      return "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30";
 
     case "Low":
-      return "bg-green-500/20 text-green-400";
+      return "bg-green-500/20 text-green-400 border border-green-500/30";
 
     default:
       return "bg-zinc-700 text-zinc-300";
@@ -24,92 +24,133 @@ function priorityColor(priority: string) {
 function statusColor(status: string) {
   switch (status) {
     case "Open":
-      return "text-blue-400";
+      return "bg-blue-500/20 text-blue-400";
 
     case "Assigned":
-      return "text-yellow-400";
+      return "bg-yellow-500/20 text-yellow-400";
 
     case "Resolved":
-      return "text-green-400";
+      return "bg-green-500/20 text-green-400";
 
     default:
-      return "text-zinc-400";
+      return "bg-zinc-700 text-zinc-300";
   }
+}
+
+function getRelativeTime(date: string) {
+  const now = new Date().getTime();
+  const created = new Date(date).getTime();
+
+  const diff = Math.floor((now - created) / 1000);
+
+  if (diff < 60) return "Just now";
+
+  if (diff < 3600)
+    return `${Math.floor(diff / 60)} min ago`;
+
+  if (diff < 86400)
+    return `${Math.floor(diff / 3600)} hr ago`;
+
+  return `${Math.floor(diff / 86400)} day ago`;
 }
 
 export default function RecentTickets({
   tickets,
 }: RecentTicketsProps) {
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-900">
+    <div className="rounded-2xl border border-zinc-800 bg-zinc-900 shadow-lg">
 
       {/* Header */}
 
-      <div className="flex items-center justify-between border-b border-zinc-800 p-6">
+      <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-5">
 
         <h2 className="text-xl font-semibold text-white">
           Recent Tickets
         </h2>
 
-        <button className="flex items-center gap-2 text-blue-400 hover:text-blue-300">
+        <button className="flex items-center gap-2 text-sm font-medium text-blue-400 transition hover:text-blue-300">
           View All
           <ArrowRight size={18} />
         </button>
 
       </div>
 
-      {/* Ticket List */}
+      {/* Empty State */}
 
-      <div>
+      {tickets.length === 0 ? (
+        <div className="flex h-60 items-center justify-center text-zinc-500">
+          No recent tickets found.
+        </div>
+      ) : (
 
-        {tickets.length === 0 ? (
+        <div>
 
-          <div className="p-8 text-center text-zinc-500">
-            No recent tickets found.
-          </div>
-
-        ) : (
-
-          tickets.map((ticket) => (
+          {tickets.map((ticket) => (
 
             <div
               key={ticket.id}
-              className="flex items-center justify-between border-b border-zinc-800 p-5 last:border-none hover:bg-zinc-800/40 transition"
+              className="cursor-pointer border-b border-zinc-800 p-5 transition hover:bg-zinc-800/40 last:border-none"
             >
 
-              <div>
+              {/* First Row */}
+
+              <div className="mb-3 flex items-center justify-between">
 
                 <h3 className="font-semibold text-white">
-                  {ticket.title}
+                  #{ticket.id} • {ticket.title}
                 </h3>
 
-                <p className="text-sm text-zinc-400">
-                  {ticket.assigned_to ?? "Unassigned"}
-                </p>
-
-              </div>
-
-              <div className="flex items-center gap-4">
-
                 <span
-                  className={`rounded-full px-3 py-1 text-sm font-medium ${priorityColor(ticket.priority)}`}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${statusColor(ticket.status)}`}
                 >
-                  {ticket.priority}
-                </span>
-
-                <span className={statusColor(ticket.status)}>
                   {ticket.status}
                 </span>
 
               </div>
 
+              {/* Second Row */}
+
+              <div className="mb-3 flex items-center gap-3">
+
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${priorityColor(ticket.priority)}`}
+                >
+                  {ticket.priority}
+                </span>
+
+              </div>
+
+              {/* Third Row */}
+
+              <div className="flex items-center justify-between text-sm text-zinc-400">
+
+                <div className="flex items-center gap-2">
+
+                  <User size={16} />
+
+                  <span>{ticket.assigned_to}</span>
+
+                </div>
+
+                <div className="flex items-center gap-2">
+
+                  <Clock3 size={16} />
+
+                  <span>
+                    {getRelativeTime(ticket.created_at)}
+                  </span>
+
+                </div>
+
+              </div>
+
             </div>
 
-          ))
+          ))}
 
-        )}
+        </div>
 
-      </div>
+      )}
 
     </div>
   );

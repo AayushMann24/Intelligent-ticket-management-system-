@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import (
     Column,
@@ -42,9 +42,9 @@ class Ticket(Base):
     )
 
     created_at = Column(
-        DateTime,
-        default=datetime.utcnow
-    )
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+     )
 
     # Relationship to the creator
     creator = relationship(

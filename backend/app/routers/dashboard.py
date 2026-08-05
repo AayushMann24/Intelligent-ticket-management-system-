@@ -42,7 +42,14 @@ def recent_tickets(
             "title": ticket.title,
             "status": ticket.status,
             "priority": ticket.priority,
-            "assigned_to": ticket.assigned_to,
+
+            "assigned_to": (
+                ticket.assignee.name
+                if ticket.assignee
+                else "Unassigned"
+            ),
+
+            "created_at": ticket.created_at,
         }
         for ticket in tickets
     ]
