@@ -35,14 +35,9 @@ export default function useDashboard() {
         getTicketTrend(),
       ]);
 
-      console.log("Dashboard Summary:", summaryResponse);
-      console.log("Recent Tickets:", recentTicketsResponse);
-      console.log("Trend Data:", trendResponse);
-
       setSummary(summaryResponse);
       setRecentTickets(recentTicketsResponse);
       setTrendData(trendResponse);
-      console.log("Trend Response:", trendResponse);
 
     } catch (error) {
       console.error("Failed to load dashboard:", error);
@@ -52,7 +47,17 @@ export default function useDashboard() {
   };
 
   useEffect(() => {
+    // Initial Load
     loadDashboard();
+
+    // Auto Refresh Every 30 Seconds
+    const interval = setInterval(() => {
+      loadDashboard();
+    }, 30000);
+
+    // Cleanup
+    return () => clearInterval(interval);
+
   }, []);
 
   const priorityData = [

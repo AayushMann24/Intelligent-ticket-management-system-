@@ -5,6 +5,8 @@ import {
   Ticket,
 } from "lucide-react";
 
+import { useNavigate } from "react-router-dom";
+
 import DashboardHeader from "../components/dashboard/DashboardHeader";
 import StatCard from "../components/dashboard/StatCard";
 import QuickActions from "../components/dashboard/QuickActions";
@@ -25,7 +27,8 @@ export default function DashboardPage() {
     trendData,
     loading,
   } = useDashboard();
-  console.log("Dashboard trendData:", trendData);
+
+  const navigate = useNavigate();
 
   if (loading) {
     return (
@@ -53,7 +56,6 @@ export default function DashboardPage() {
 
   return (
     <MainLayout>
-
       <DashboardHeader />
 
       {/* Statistics Cards */}
@@ -65,6 +67,7 @@ export default function DashboardPage() {
           value={summary.total_tickets}
           icon={<Ticket size={28} />}
           color="bg-blue-600"
+          onClick={() => navigate("/tickets")}
         />
 
         <StatCard
@@ -72,6 +75,7 @@ export default function DashboardPage() {
           value={summary.open_tickets}
           icon={<Clock3 size={28} />}
           color="bg-yellow-500"
+          onClick={() => navigate("/tickets?status=Open")}
         />
 
         <StatCard
@@ -79,6 +83,7 @@ export default function DashboardPage() {
           value={summary.assigned_tickets}
           icon={<ClipboardList size={28} />}
           color="bg-purple-600"
+          onClick={() => navigate("/tickets?status=Assigned")}
         />
 
         <StatCard
@@ -86,6 +91,7 @@ export default function DashboardPage() {
           value={summary.resolved_tickets}
           icon={<CheckCircle size={28} />}
           color="bg-green-600"
+          onClick={() => navigate("/tickets?status=Resolved")}
         />
 
       </div>
@@ -96,7 +102,7 @@ export default function DashboardPage() {
         <QuickActions />
       </div>
 
-      {/* Priority + Recent Tickets */}
+      {/* Priority Chart + Recent Tickets */}
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
 

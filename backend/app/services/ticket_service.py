@@ -29,9 +29,34 @@ def create_ticket(db: Session, ticket_data, user_id: int):
 # ==========================================
 # Get All Tickets
 # ==========================================
+from sqlalchemy.orm import joinedload
+
 def get_all_tickets(db: Session):
-    tickets = db.query(Ticket).all()
-    return tickets
+    tickets = (
+        db.query(Ticket)
+        .options(joinedload(Ticket.assignee))
+        .all()
+    )
+
+    result = []
+
+    for ticket in tickets:
+        result.append({
+            "id": ticket.id,
+            "title": ticket.title,
+            "description": ticket.description,
+            "priority": ticket.priority,
+            "status": ticket.status,
+            "created_by": ticket.created_by,
+            "assigned_to": (
+                ticket.assignee.name
+                if ticket.assignee
+                else "Unassigned"
+            ),
+            "created_at": ticket.created_at,
+        })
+
+    return result
 
 
 # ==========================================

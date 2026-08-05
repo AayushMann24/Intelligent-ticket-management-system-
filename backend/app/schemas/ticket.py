@@ -1,4 +1,6 @@
-from pydantic import BaseModel
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict
 
 
 # -----------------------------
@@ -29,6 +31,13 @@ class TicketAssign(BaseModel):
 
 
 # -----------------------------
+# Update Status
+# -----------------------------
+class TicketStatusUpdate(BaseModel):
+    status: str
+
+
+# -----------------------------
 # Ticket Response
 # -----------------------------
 class TicketResponse(BaseModel):
@@ -38,11 +47,9 @@ class TicketResponse(BaseModel):
     priority: str
     status: str
     created_by: int
-    assigned_to: int | None = None
+    assigned_to: str | None = None
+    created_at: datetime | None = None
 
-class Config:
-        from_attributes = True
-
-class TicketStatusUpdate(BaseModel):
-        status: str
-    
+    model_config = ConfigDict(
+        from_attributes=True
+    )

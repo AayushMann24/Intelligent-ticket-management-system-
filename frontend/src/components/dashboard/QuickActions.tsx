@@ -1,96 +1,84 @@
 import {
+  BarChart3,
+  Bot,
   Plus,
   Users,
-  Bot,
-  BarChart3,
 } from "lucide-react";
 
 import { useNavigate } from "react-router-dom";
 
-const actions = [
-  {
-    title: "New Ticket",
-    icon: Plus,
-    color: "bg-blue-600",
-    path: "/tickets",
-  },
-  {
-    title: "Manage Users",
-    icon: Users,
-    color: "bg-green-600",
-    path: "/users",
-  },
-  {
-    title: "AI Assistant",
-    icon: Bot,
-    color: "bg-purple-600",
-    path: "/assistant",
-  },
-  {
-    title: "Analytics",
-    icon: BarChart3,
-    color: "bg-orange-500",
-    path: "/analytics",
-  },
-];
-
 export default function QuickActions() {
-
   const navigate = useNavigate();
 
+  const actions = [
+    {
+      title: "New Ticket",
+      icon: <Plus size={34} />,
+      color: "bg-blue-600",
+      onClick: () => navigate("/tickets/new"),
+    },
+    {
+      title: "Manage Users",
+      icon: <Users size={34} />,
+      color: "bg-green-600",
+      onClick: () => navigate("/users"),
+    },
+    {
+      title: "AI Assistant",
+      icon: <Bot size={34} />,
+      color: "bg-purple-600",
+      onClick: () => navigate("/assistant"),
+    },
+    {
+      title: "Analytics",
+      icon: <BarChart3 size={34} />,
+      color: "bg-orange-500",
+      onClick: () => navigate("/analytics"),
+    },
+  ];
+
   return (
-
-    <div className="mt-10">
-
-      <h2 className="mb-5 text-2xl font-bold text-white">
+    <>
+      <h2 className="mb-6 text-2xl font-bold text-white">
         Quick Actions
       </h2>
 
-      <div className="grid grid-cols-2 gap-6 lg:grid-cols-4">
-
-        {actions.map((action) => {
-
-          const Icon = action.icon;
-
-          return (
-
-            <button
-              key={action.title}
-              onClick={() => navigate(action.path)}
-              className="
-                rounded-2xl
-                border
-                border-zinc-800
-                bg-zinc-900
-                p-6
-                transition-all
-                duration-300
-                hover:-translate-y-1
-                hover:border-blue-500
-                hover:shadow-xl
-              "
-            >
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        {actions.map((action) => (
+          <div
+            key={action.title}
+            onClick={action.onClick}
+            className="
+              cursor-pointer
+              rounded-2xl
+              border
+              border-zinc-800
+              bg-zinc-900
+              p-8
+              transition-all
+              duration-300
+              hover:-translate-y-1
+              hover:border-blue-500
+              hover:shadow-lg
+              hover:shadow-blue-500/10
+            "
+          >
+            <div className="flex flex-col items-center">
 
               <div
-                className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl ${action.color}`}
+                className={`${action.color} mb-6 rounded-2xl p-5 text-white`}
               >
-                <Icon size={28} className="text-white" />
+                {action.icon}
               </div>
 
-              <h3 className="font-semibold text-white">
+              <h3 className="text-xl font-semibold text-white">
                 {action.title}
               </h3>
 
-            </button>
-
-          );
-
-        })}
-
+            </div>
+          </div>
+        ))}
       </div>
-
-    </div>
-
+    </>
   );
-
 }
