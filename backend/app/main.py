@@ -12,7 +12,7 @@ from app.dependencies.auth import verify_token
 from app.routers import auth
 from app.routers import ticket
 from app.routers import user
-from app.routers import ai
+#from app.routers import ai
 from app.routers.dashboard import router as dashboard_router
 
 Base.metadata.create_all(bind=engine)
@@ -32,7 +32,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(ticket.router)
 app.include_router(user.router)
-app.include_router(ai.router)
+#app.include_router(ai.router)
 app.include_router(dashboard_router)
 
 

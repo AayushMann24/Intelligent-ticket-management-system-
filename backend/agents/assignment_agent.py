@@ -1,75 +1,93 @@
-from langchain_core.messages import HumanMessage
+"""
+Assignment Intelligence Agent
 
-from agents.llm import llm
-from agents.prompts import ASSIGNMENT_PROMPT
-from agents.json_parser import parse_llm_json
-from agents.assignment_tools import get_technician_workload
+This agent DOES NOT use an LLM.
+
+It assigns tickets using deterministic
+business rules.
+
+Rules:
+
+1. Match specialization.
+2. Choose technician with lowest workload.
+3. If none match, choose overall lowest workload.
+"""
 
 
 def assignment_agent(state):
     """
-    Assignment Agent
-
-    Uses real technicians from the database.
+    Assign the best technician.
     """
-    db = state["db"]
-    title = state["title"]
-    description = state["description"]
 
-    category = state.get("category", "")
-    subcategory = state.get("subcategory", "")
-    priority = state.get("priority", "")
+    category = state.get("category")
 
-    technicians = get_technician_workload(db)
+    technicians = state.get("technicians", [])
 
-    prompt = f"""
-{ASSIGNMENT_PROMPT}
+    if not technicians:
 
-Ticket Title:
-{title}
+        return {
+            "assigned_to": None,
+            "assigned_name": None,
+            "assignment_reason": "No technicians available."
+        }
 
-Ticket Description:
-{description}
+    # -----------------------------------
+    # Step 1
+    # Find matching specialization
+    # -----------------------------------
 
-Category:
-{category}
+    matching = [
 
-Subcategory:
-{subcategory}
+        tech
 
-Priority:
-{priority}
+        for tech in technicians
 
-Available Technicians:
+        if tech["specialization"].lower()
+        == category.lower()
 
-{technicians}
+    ]
 
-Choose the BEST technician.
+    # -----------------------------------
+    # Step 2
+    # If nobody matches,
+    # use everyone
+    # -----------------------------------
 
-Return ONLY JSON.
+    if not matching:
 
-Example:
+        matching = technicians
 
-{{
-    "assigned_to":2,
-    "assigned_name":"Rahul",
-    "reason":"Hardware specialist with lowest workload"
-}}
-"""
+        reason = (
+            "No technician matched the specialization. "
+            "Assigned based on lowest workload."
+        )
 
-    response = llm.invoke(
-        [HumanMessage(content=prompt)]
+    else:
+
+        reason = (
+            "Assigned based on specialization "
+            "and lowest workload."
+        )
+
+    # -----------------------------------
+    # Step 3
+    # Lowest workload wins
+    # -----------------------------------
+
+    best = min(
+
+        matching,
+
+        key=lambda tech: tech["workload"]
+
     )
-
-    result = parse_llm_json(response.content)
 
     return {
 
-        "assigned_to": result.get("assigned_to"),
+        "assigned_to": best["id"],
 
-        "assigned_name": result.get("assigned_name"),
+        "assigned_name": best["name"],
 
-        "assignment_reason": result.get("reason"),
+        "assignment_reason": reason,
 
-        "messages": [response],
     }

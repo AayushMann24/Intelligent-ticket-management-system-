@@ -7,32 +7,56 @@ from agents.json_parser import parse_llm_json
 
 def analytics_agent(state):
     """
-    Analytics Agent
+    Analytics Intelligence Agent
 
-    Generates AI insights from dashboard statistics.
+    Responsibilities:
+    - Analyze dashboard statistics
+    - Generate summary
+    - Detect operational risks
+    - Suggest recommendations
     """
 
-    analytics = state.get("analytics", {})
+    dashboard = state.get(
+        "dashboard_stats",
+        {},
+    )
 
     prompt = f"""
 {ANALYTICS_PROMPT}
 
 Dashboard Statistics:
 
-{analytics}
-
-Generate management insights.
-
-Return ONLY valid JSON.
+{dashboard}
 """
 
     response = llm.invoke(
         [HumanMessage(content=prompt)]
     )
 
-    result = parse_llm_json(response.content)
+    result = parse_llm_json(
+        response.content
+    )
 
     return {
-        "analytics": result,
+
+        "analytics": {
+
+            "summary": result.get(
+                "summary",
+                "",
+            ),
+
+            "risks": result.get(
+                "risks",
+                [],
+            ),
+
+            "recommendations": result.get(
+                "recommendations",
+                [],
+            ),
+
+        },
+
         "messages": [response],
     }

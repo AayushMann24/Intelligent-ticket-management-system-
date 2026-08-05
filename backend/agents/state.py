@@ -1,50 +1,81 @@
-from typing import Annotated, TypedDict, Optional
+from typing import Annotated, Optional, TypedDict
 
 from langgraph.graph.message import add_messages
 
 
 class AgentState(TypedDict):
-    # ============================
-    # LangGraph Messages
-    # ============================
+    """
+    Shared state for all AI agents.
+
+    Every agent reads from this state,
+    updates only its own fields,
+    and passes it to the next agent.
+    """
+
+    # ==========================================
+    # Conversation
+    # ==========================================
+
     messages: Annotated[list, add_messages]
 
-    # Next node selected by Supervisor
-    next: str
+    # ==========================================
+    # Supervisor Routing
+    # ==========================================
 
-    # ============================
+    workflow: str
+
+    # ==========================================
     # Original Ticket
-    # ============================
+    # ==========================================
+
     title: str
     description: str
 
-    # ============================
-    # Ticket Analysis Agent Output
-    # ============================
+    # ==========================================
+    # Ticket Analysis Output
+    # ==========================================
+
     category: Optional[str]
     subcategory: Optional[str]
+
     keywords: list[str]
+
     confidence: Optional[float]
 
-    # ============================
-    # Priority Agent Output
-    # ============================
+    # ==========================================
+    # Priority Output
+    # ==========================================
+
     priority: Optional[str]
+
     priority_reason: Optional[str]
 
-    # ============================
-    # Assignment Agent Output
-    # ============================
+    # ==========================================
+    # Assignment Input
+    # ==========================================
+
+    technicians: list[dict]
+
+    # ==========================================
+    # Assignment Output
+    # ==========================================
+
     assigned_to: Optional[int]
+
     assigned_name: Optional[str]
+
     assignment_reason: Optional[str]
 
-    # ============================
-    # Analytics Agent Output
-    # ============================
+    # ==========================================
+    # Analytics
+    # ==========================================
+
+    dashboard_stats: Optional[dict]
+
     analytics: Optional[dict]
 
-    # ============================
-    # Final Supervisor Response
-    # ============================
+    # ==========================================
+    # Final Output
+    # ==========================================
+
     final_response: Optional[dict]

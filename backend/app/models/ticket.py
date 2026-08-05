@@ -4,12 +4,12 @@ from sqlalchemy import (
     Column,
     Integer,
     String,
-    ForeignKey,
-    DateTime,
+    Text,
     Float,
     Boolean,
     JSON,
-    Text,
+    ForeignKey,
+    DateTime,
 )
 
 from sqlalchemy.orm import relationship
@@ -20,47 +20,58 @@ from app.database.connection import Base
 class Ticket(Base):
     __tablename__ = "tickets"
 
+    # =====================================================
+    # Primary Information
+    # =====================================================
+
     id = Column(Integer, primary_key=True, index=True)
 
     title = Column(String, nullable=False)
 
-    description = Column(String, nullable=False)
+    description = Column(Text, nullable=False)
 
-    priority = Column(String, default="Medium")
+    # =====================================================
+    # AI Ticket Analysis
+    # =====================================================
 
-    status = Column(
+    category = Column(
+        String,
+        nullable=True,
+    )
+
+    subcategory = Column(
+        String,
+        nullable=True,
+    )
+
+    keywords = Column(
+        JSON,
+        nullable=True,
+    )
+
+    confidence = Column(
+        Float,
+        nullable=True,
+    )
+
+    # =====================================================
+    # Priority
+    # =====================================================
+
+    priority = Column(
         String,
         nullable=False,
-        default="Open",
+        default="Medium",
     )
 
-    # ==========================
-    # AI Fields
-    # ==========================
-
-    category = Column(String, nullable=True)
-
-    subcategory = Column(String, nullable=True)
-
-    keywords = Column(JSON, nullable=True)
-
-    confidence = Column(Float, nullable=True)
-
-    priority_reason = Column(Text, nullable=True)
-
-    assignment_reason = Column(Text, nullable=True)
-
-    ai_processed = Column(
-        Boolean,
-        default=False,
+    priority_reason = Column(
+        Text,
+        nullable=True,
     )
 
-    # ==========================
-
-    created_by = Column(
-        Integer,
-        ForeignKey("users.id"),
-    )
+    # =====================================================
+    # Assignment
+    # =====================================================
 
     assigned_to = Column(
         Integer,
@@ -68,10 +79,49 @@ class Ticket(Base):
         nullable=True,
     )
 
+    assignment_reason = Column(
+        Text,
+        nullable=True,
+    )
+
+    # =====================================================
+    # Ticket Status
+    # =====================================================
+
+    status = Column(
+        String,
+        nullable=False,
+        default="Open",
+    )
+
+    # =====================================================
+    # AI Metadata
+    # =====================================================
+
+    ai_processed = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+    )
+
+    # =====================================================
+    # Creator Information
+    # =====================================================
+
+    created_by = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+    )
+
     created_at = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
     )
+
+    # =====================================================
+    # Relationships
+    # =====================================================
 
     creator = relationship(
         "User",

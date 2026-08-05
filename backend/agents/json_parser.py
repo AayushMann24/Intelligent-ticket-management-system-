@@ -4,25 +4,53 @@ import re
 
 def parse_llm_json(response: str) -> dict:
     """
-    Extracts JSON from an LLM response.
+    Safely extracts JSON from an LLM response.
 
     Handles:
+
     - Plain JSON
-    - ```json ... ```
-    - ``` ... ```
+    - Markdown code blocks
+    - Extra explanatory text
+    - Invalid responses
+
+    Returns an empty dictionary if parsing fails.
     """
 
-    text = response.strip()
+    if not response:
+        return {}
 
-    # Remove markdown code blocks
-    text = re.sub(r"^```json", "", text, flags=re.IGNORECASE)
-    text = re.sub(r"^```", "", text)
-    text = re.sub(r"```$", "", text)
+    response = response.strip()
 
-    text = text.strip()
+    # ----------------------------------------
+    # Remove markdown code fences
+    # ----------------------------------------
+
+    response = re.sub(r"^```json", "", response, flags=re.IGNORECASE)
+    response = re.sub(r"^```", "", response)
+    response = re.sub(r"```$", "", response)
+
+    response = response.strip()
+
+    # ----------------------------------------
+    # Try direct JSON
+    # ----------------------------------------
 
     try:
-        return json.loads(text)
-
+        return json.loads(response)
     except Exception:
-        return {}
+        pass
+
+    # ----------------------------------------
+    # Try extracting the first JSON object
+    # ----------------------------------------
+
+    match = re.search(r"\{.*\}", response, re.DOTALL)
+
+    if match:
+
+        try:
+            return json.loads(match.group())
+        except Exception:
+            pass
+
+    return {}

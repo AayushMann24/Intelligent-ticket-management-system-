@@ -7,17 +7,28 @@ from agents.json_parser import parse_llm_json
 
 def priority_agent(state):
     """
-    Priority Agent
+    Priority Intelligence Agent
 
-    Determines ticket priority based on
-    ticket details and analysis.
+    Responsibilities:
+    - Determine ticket priority
+    - Explain why the priority was chosen
+
+    Input:
+        - title
+        - description
+        - category
+        - subcategory
+
+    Output:
+        - priority
+        - priority_reason
     """
 
     title = state["title"]
     description = state["description"]
 
-    category = state.get("category", "")
-    subcategory = state.get("subcategory", "")
+    category = state.get("category", "Other")
+    subcategory = state.get("subcategory", "General")
 
     prompt = f"""
 {PRIORITY_PROMPT}
@@ -42,7 +53,16 @@ Detected Subcategory:
     result = parse_llm_json(response.content)
 
     return {
-        "priority": result.get("priority"),
-        "priority_reason": result.get("reason"),
+
+        "priority": result.get(
+            "priority",
+            "Medium"
+        ),
+
+        "priority_reason": result.get(
+            "reason",
+            "Default priority assigned."
+        ),
+
         "messages": [response],
     }

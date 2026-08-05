@@ -1,42 +1,66 @@
-from langchain_core.messages import AIMessage
+"""
+Supervisor Agent
+
+This agent does NOT use an LLM.
+
+Its only responsibility is to determine
+which workflow should execute.
+
+Possible workflows:
+
+1. ticket_workflow
+2. analytics_workflow
+"""
 
 
-def supervisor(state):
+ANALYTICS_KEYWORDS = {
+
+    "dashboard",
+    "analytics",
+    "analysis",
+    "report",
+    "reports",
+    "statistics",
+    "summary",
+    "trend",
+    "trends",
+    "graph",
+    "graphs",
+    "chart",
+    "charts",
+    "insight",
+    "insights",
+    "metrics",
+
+}
+
+
+def supervisor_agent(state):
     """
-    Supervisor Agent
+    Decide which workflow to execute.
 
-    Decides which workflow should run.
+    Returns:
+        ticket_workflow
+        analytics_workflow
     """
 
     messages = state.get("messages", [])
 
-    request = ""
+    if not messages:
+        return {
+            "workflow": "ticket_workflow"
+        }
 
-    if messages:
-        request = messages[-1].content.lower()
+    request = messages[-1].content.lower()
 
-    analytics_keywords = [
-        "dashboard",
-        "analytics",
-        "summary",
-        "statistics",
-        "report",
-        "trend",
-        "insight",
-    ]
+    for keyword in ANALYTICS_KEYWORDS:
 
-    if any(word in request for word in analytics_keywords):
+        if keyword in request:
 
-        state["next"] = "analytics_agent"
+            return {
+                "workflow": "analytics_workflow"
+            }
 
-    else:
-
-        state["next"] = "ticket_agent"
-
-    state["messages"].append(
-        AIMessage(
-            content=f"Routing to {state['next']}"
-        )
-    )
-
-    return state
+    return {
+        "workflow": "ticket_workflow"
+    }
