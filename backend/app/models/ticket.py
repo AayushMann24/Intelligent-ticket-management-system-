@@ -5,11 +5,17 @@ from sqlalchemy import (
     Integer,
     String,
     ForeignKey,
-    DateTime
+    DateTime,
+    Float,
+    Boolean,
+    JSON,
+    Text,
 )
+
 from sqlalchemy.orm import relationship
 
 from app.database.connection import Base
+
 
 class Ticket(Base):
     __tablename__ = "tickets"
@@ -23,39 +29,58 @@ class Ticket(Base):
     priority = Column(String, default="Medium")
 
     status = Column(
-    String,
-    nullable=False,
-    default="Open"
+        String,
+        nullable=False,
+        default="Open",
     )
 
-    # User who created the ticket
+    # ==========================
+    # AI Fields
+    # ==========================
+
+    category = Column(String, nullable=True)
+
+    subcategory = Column(String, nullable=True)
+
+    keywords = Column(JSON, nullable=True)
+
+    confidence = Column(Float, nullable=True)
+
+    priority_reason = Column(Text, nullable=True)
+
+    assignment_reason = Column(Text, nullable=True)
+
+    ai_processed = Column(
+        Boolean,
+        default=False,
+    )
+
+    # ==========================
+
     created_by = Column(
         Integer,
-        ForeignKey("users.id")
+        ForeignKey("users.id"),
     )
 
-    # Technician assigned to the ticket
     assigned_to = Column(
         Integer,
         ForeignKey("users.id"),
-        nullable=True
+        nullable=True,
     )
 
     created_at = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
-     )
+    )
 
-    # Relationship to the creator
     creator = relationship(
         "User",
         foreign_keys="Ticket.created_by",
-        back_populates="created_tickets"
+        back_populates="created_tickets",
     )
 
-    # Relationship to the assigned technician
     assignee = relationship(
         "User",
         foreign_keys="Ticket.assigned_to",
-        back_populates="assigned_tickets"
+        back_populates="assigned_tickets",
     )

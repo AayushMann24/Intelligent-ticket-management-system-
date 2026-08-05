@@ -16,7 +16,17 @@ class User(Base):
 
     password = Column(String, nullable=False)
 
-    role = Column(String, nullable=False, default="Employee")
+    role = Column(
+        String,
+        nullable=False,
+        default="Employee"
+    )
+
+    # AI Assignment Field
+    specialization = Column(
+        String,
+        nullable=True,
+    )
 
     created_at = Column(
         DateTime,

@@ -1,90 +1,101 @@
-from agents.llm import llm
+from agents.ticket_agent import ticket_agent
+from agents.priority_agent import priority_agent
+from agents.assignment_agent import assignment_agent
+from agents.analytics_agent import analytics_agent
 
 
 def supervisor(state):
+    """
+    Supervisor Agent
 
-    # Get conversation messages from state
-    messages = state["messages"]
+    Coordinates all AI agents and
+    produces one final response.
+    """
 
-    prompt = f"""
-You are the routing supervisor of an Intelligent Ticket Management System.
+    messages = state.get("messages", [])
 
-Your ONLY job is to decide which specialized agent should handle the request.
+    request = ""
 
-Return ONLY one word.
+    if messages:
+        request = messages[-1].content.lower()
 
-Allowed outputs:
+    # ==========================================
+    # Analytics Requests
+    # ==========================================
 
-ticket_agent
-dashboard_agent
-user_agent
+    analytics_keywords = [
+        "dashboard",
+        "analytics",
+        "summary",
+        "statistics",
+        "report",
+        "trend",
+        "insight",
+    ]
 
-=========================
+    if any(word in request for word in analytics_keywords):
 
-ticket_agent
+        analytics_result = analytics_agent(state)
 
-Use for ANY ticket related request:
+        state.update(analytics_result)
 
-- create ticket
-- new issue
-- printer issue
-- network issue
-- assign ticket
-- close ticket
-- update ticket
-- delete ticket
-- ticket details
-- ticket status
-- show tickets
-- list tickets
+        state["final_response"] = {
+            "type": "analytics",
+            "analytics": analytics_result.get(
+                "analytics",
+                {},
+            ),
+        }
 
-=========================
+        return state
 
-dashboard_agent
+    # ==========================================
+    # Ticket Processing Workflow
+    # ==========================================
 
-Use for:
+    # Step 1
+    ticket_result = ticket_agent(state)
 
-- dashboard
-- analytics
-- summary
-- statistics
-- reports
-- open tickets
-- closed tickets
-- critical tickets
+    state.update(ticket_result)
 
-=========================
+    # Step 2
+    priority_result = priority_agent(state)
 
-user_agent
+    state.update(priority_result)
 
-Use for:
+    # Step 3
+    assignment_result = assignment_agent(
+    state,
+    state["db"],
+    )
 
-- create employee
-- create technician
-- create admin
-- register user
-- list users
-- show technicians
-- delete user
-- update user
+    state.update(assignment_result)
 
-=========================
+    # ==========================================
+    # Final Combined Output
+    # ==========================================
 
-User Request:
+    state["final_response"] = {
 
-{messages[-1].content}
+        "type": "ticket",
 
-Return ONLY one of:
+        "category": state.get("category"),
 
-ticket_agent
-dashboard_agent
-user_agent
-"""
+        "subcategory": state.get("subcategory"),
 
-    response = llm.invoke(prompt)
+        "keywords": state.get("keywords"),
 
-    route = response.content.strip()
+        "confidence": state.get("confidence"),
 
-    return {
-        "next": route
+        "priority": state.get("priority"),
+
+        "priority_reason": state.get("priority_reason"),
+
+        "assigned_to": state.get("assigned_to"),
+
+        "assigned_name": state.get("assigned_name"),
+
+        "assignment_reason": state.get("assignment_reason"),
     }
+
+    return state

@@ -5,26 +5,131 @@ from app.models.ticket import Ticket
 from app.models.user import User
 from app.schemas.ticket import TicketUpdate
 from app.constants.status import TICKET_STATUS
-
+from agents.graph import graph
 
 # ==========================================
 # Create Ticket
 # ==========================================
-def create_ticket(db: Session, ticket_data, user_id: int):
+from langchain_core.messages import HumanMessage
+
+
+def create_ticket(
+    db: Session,
+    ticket_data,
+    user_id: int,
+):
+
+    # =====================================
+    # Build AI State
+    # =====================================
+
+    state = {
+        "messages": [
+            HumanMessage(
+                content=f"""
+Title:
+{ticket_data.title}
+
+Description:
+{ticket_data.description}
+"""
+            )
+        ],
+
+        "title": ticket_data.title,
+        "description": ticket_data.description,
+
+        "category": None,
+        "subcategory": None,
+        "keywords": [],
+
+        "confidence": None,
+
+        "priority": None,
+        "priority_reason": None,
+
+        "assigned_to": None,
+        "assigned_name": None,
+        "assignment_reason": None,
+
+        "analytics": {},
+
+        "final_response": None,
+
+        "next": "",
+    }
+
+    # =====================================
+    # Run Multi-Agent Workflow
+    # =====================================
+
+    ai_result = graph.invoke(state)
+
+    print(ai_result)
+
+    # =====================================
+    # Save Ticket
+    # =====================================
 
     new_ticket = Ticket(
-        title=ticket_data.title,
-        description=ticket_data.description,
-        priority=ticket_data.priority,
-        created_by=user_id
-    )
 
-    db.add(new_ticket)
-    db.commit()
-    db.refresh(new_ticket)
+    # =====================================
+    # Ticket Details
+    # =====================================
 
-    return new_ticket
+    title=ticket_data.title,
 
+    description=ticket_data.description,
+
+    # =====================================
+    # AI Ticket Analysis
+    # =====================================
+
+    category=ai_result.get("category"),
+
+    subcategory=ai_result.get("subcategory"),
+
+    keywords=ai_result.get("keywords"),
+
+    confidence=ai_result.get("confidence"),
+
+    # =====================================
+    # AI Priority
+    # =====================================
+
+    priority=(
+        ai_result.get("priority")
+        or ticket_data.priority
+    ),
+
+    priority_reason=ai_result.get(
+        "priority_reason"
+    ),
+
+    # =====================================
+    # AI Assignment
+    # =====================================
+
+    assigned_to=ai_result.get(
+        "assigned_to"
+    ),
+
+    assignment_reason=ai_result.get(
+        "assignment_reason"
+    ),
+
+    # =====================================
+    # AI Status
+    # =====================================
+
+    ai_processed=True,
+
+    # =====================================
+    # Creator
+    # =====================================
+
+    created_by=user_id,
+)
 
 # ==========================================
 # Get All Tickets

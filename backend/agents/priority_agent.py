@@ -1,26 +1,38 @@
 from langchain_core.messages import HumanMessage
 
 from agents.llm import llm
-from agents.prompts import TICKET_ANALYSIS_PROMPT
+from agents.prompts import PRIORITY_PROMPT
 from agents.json_parser import parse_llm_json
 
 
-def ticket_agent(state):
+def priority_agent(state):
     """
-    Ticket Analysis Agent
+    Priority Agent
+
+    Determines ticket priority based on
+    ticket details and analysis.
     """
 
     title = state["title"]
     description = state["description"]
 
+    category = state.get("category", "")
+    subcategory = state.get("subcategory", "")
+
     prompt = f"""
-{TICKET_ANALYSIS_PROMPT}
+{PRIORITY_PROMPT}
 
 Ticket Title:
 {title}
 
 Ticket Description:
 {description}
+
+Detected Category:
+{category}
+
+Detected Subcategory:
+{subcategory}
 """
 
     response = llm.invoke(
@@ -30,9 +42,7 @@ Ticket Description:
     result = parse_llm_json(response.content)
 
     return {
-        "category": result.get("category"),
-        "subcategory": result.get("subcategory"),
-        "keywords": result.get("keywords", []),
-        "confidence": result.get("confidence", 0),
+        "priority": result.get("priority"),
+        "priority_reason": result.get("reason"),
         "messages": [response],
     }
