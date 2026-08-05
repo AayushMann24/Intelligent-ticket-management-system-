@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 
-import { getAllTickets } from "../services/ticketService";
+import {
+  getAllTickets,
+  deleteTicket,
+  updateTicket,
+  createTicket,
+} from "../services/ticketService";
 
 import type { Ticket } from "../types/ticket";
 
@@ -12,6 +17,9 @@ export default function useTickets() {
   const [status, setStatus] = useState("");
   const [priority, setPriority] = useState("");
 
+  // ===============================
+  // Load Tickets
+  // ===============================
   const loadTickets = async () => {
     try {
       const data = await getAllTickets();
@@ -23,10 +31,62 @@ export default function useTickets() {
     }
   };
 
+  // ===============================
+  // Delete Ticket
+  // ===============================
+  const removeTicket = async (ticketId: number) => {
+    try {
+      await deleteTicket(ticketId);
+      await loadTickets();
+    } catch (error) {
+      console.error("Failed to delete ticket:", error);
+    }
+  };
+
+  // ===============================
+  // Edit Ticket
+  // ===============================
+  const editTicket = async (
+    ticketId: number,
+    updatedTicket: {
+      title: string;
+      description: string;
+      priority: string;
+      status: string;
+      assigned_to: number | null;
+    }
+  ) => {
+    try {
+      await updateTicket(ticketId, updatedTicket);
+      await loadTickets();
+    } catch (error) {
+      console.error("Failed to update ticket:", error);
+    }
+  };
+
+  // ===============================
+  // Create Ticket
+  // ===============================
+  const addTicket = async (ticket: {
+    title: string;
+    description: string;
+    priority: string;
+  }) => {
+    try {
+      await createTicket(ticket);
+      await loadTickets();
+    } catch (error) {
+      console.error("Failed to create ticket:", error);
+    }
+  };
+
   useEffect(() => {
     loadTickets();
   }, []);
 
+  // ===============================
+  // Filters
+  // ===============================
   const filteredTickets = tickets.filter((ticket) => {
     const matchesSearch = ticket.title
       .toLowerCase()
@@ -48,7 +108,12 @@ export default function useTickets() {
   return {
     tickets: filteredTickets,
     loading,
+
     reloadTickets: loadTickets,
+
+    removeTicket,
+    editTicket,
+    addTicket,
 
     search,
     setSearch,
