@@ -289,3 +289,26 @@ def update_ticket_status(db: Session, ticket_id: int, status: str):
     db.refresh(ticket)
 
     return ticket
+def create_ticket(db: Session, ticket_data, user_id: int):
+    print("\n===========================")
+    print("CREATE TICKET CALLED")
+    print("Title:", ticket_data.title)
+    print("===========================\n")
+
+    technicians = get_available_technicians(db)
+
+    ai_result = AIService.analyze_ticket(
+        title=ticket_data.title,
+        description=ticket_data.description,
+        technicians=technicians,
+    )
+
+    new_ticket = build_ticket(ticket_data, ai_result, user_id)
+
+    db.add(new_ticket)
+    db.commit()
+    db.refresh(new_ticket)
+
+    print("Inserted Ticket ID:", new_ticket.id)
+
+    return new_ticket

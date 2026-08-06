@@ -30,6 +30,10 @@ export default function useTickets() {
 
       const data = await getAllTickets();
 
+      console.log("========== API DATA ==========");
+      console.log(data);
+      console.log("==============================");
+
       setTickets(data);
     } catch (error) {
       console.error("Failed to load tickets:", error);

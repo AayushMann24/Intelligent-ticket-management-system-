@@ -102,7 +102,7 @@ export default function TicketTable({
                 </td>
 
                 <td className="px-6 py-4">
-                  {ticket.assigned_to ?? "Unassigned"}
+                  {ticket.assigned_name ?? "Unassigned"}
                 </td>
 
                 <td className="px-6 py-4">

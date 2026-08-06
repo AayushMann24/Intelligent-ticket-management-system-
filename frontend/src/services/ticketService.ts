@@ -34,10 +34,15 @@ export interface TicketUpdatePayload {
 // Get All Tickets
 // ======================================
 export async function getAllTickets() {
+
+  console.log("Calling:", `${API}/tickets`);
+
   const response = await axios.get(
     `${API}/tickets`,
     authConfig()
   );
+
+  console.log(response.data);
 
   return response.data;
 }
