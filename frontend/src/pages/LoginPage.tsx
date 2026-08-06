@@ -41,7 +41,27 @@ export default function LoginPage() {
       localStorage.setItem(
         "token",
         response.access_token
+    );
+
+        localStorage.setItem(
+        "role",
+        response.role
       );
+
+        localStorage.setItem(
+        "name",
+        response.name
+      );
+
+localStorage.setItem(
+  "email",
+  response.email
+);
+
+localStorage.setItem(
+  "userId",
+  response.id.toString()
+);
 
       navigate("/dashboard");
 

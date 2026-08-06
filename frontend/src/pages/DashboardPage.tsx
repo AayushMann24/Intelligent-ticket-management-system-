@@ -20,6 +20,12 @@ import ActivityFeed from "../components/dashboard/ActivityFeed";
 import useDashboard from "../hooks/useDashboard";
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
+
+  const role = localStorage.getItem("role");
+
+  const isAdmin = role === "Admin";
+
   const {
     summary,
     recentTickets,
@@ -28,8 +34,6 @@ export default function DashboardPage() {
     activity,
     loading,
   } = useDashboard();
-
-  const navigate = useNavigate();
 
   if (loading) {
     return (
@@ -57,10 +61,13 @@ export default function DashboardPage() {
 
   return (
     <MainLayout>
+
       <DashboardHeader />
 
-      {/* Statistics Cards */}
+      {/* Statistics */}
+
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+
         <StatCard
           title="Total Tickets"
           value={summary.total_tickets}
@@ -92,26 +99,35 @@ export default function DashboardPage() {
           color="bg-green-600"
           onClick={() => navigate("/tickets?status=Resolved")}
         />
+
       </div>
 
-      {/* Quick Actions */}
-      <div className="mt-8">
-        <QuickActions />
-      </div>
+      {/* Admin Only */}
 
-      {/* Charts + Recent Tickets */}
-      <div className="mt-8 grid gap-6 lg:grid-cols-2">
-        <PriorityChart data={priorityData} />
+      {isAdmin && (
+        <>
+          <div className="mt-8">
+            <QuickActions />
+          </div>
 
-        <RecentTickets tickets={recentTickets} />
-      </div>
+          <div className="mt-8 grid gap-6 lg:grid-cols-2">
 
-      {/* Trend + Activity */}
-      <div className="mt-8 grid gap-6 lg:grid-cols-2">
-        <TicketTrendChart data={trendData} />
+            <PriorityChart data={priorityData} />
 
-        <ActivityFeed activity={activity} />
-      </div>
+            <RecentTickets tickets={recentTickets} />
+
+          </div>
+
+          <div className="mt-8 grid gap-6 lg:grid-cols-2">
+
+            <TicketTrendChart data={trendData} />
+
+            <ActivityFeed activity={activity} />
+
+          </div>
+        </>
+      )}
+
     </MainLayout>
   );
 }

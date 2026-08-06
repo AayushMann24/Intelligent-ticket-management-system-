@@ -98,14 +98,45 @@ def create_ticket(db: Session, ticket_data, user_id: int):
 
 
 # ==========================================
-# Get All Tickets
+# Get Tickets Based On User Role
 # ==========================================
-def get_all_tickets(db: Session):
-    tickets = (
+def get_tickets_for_user(
+    db: Session,
+    user_id: int,
+    role: str,
+):
+    query = (
         db.query(Ticket)
         .options(joinedload(Ticket.assignee))
-        .all()
     )
+
+    # ==========================================
+    # Admin -> See Every Ticket
+    # ==========================================
+    if role == "Admin":
+        tickets = query.all()
+
+    # ==========================================
+    # Technician -> Only Assigned Tickets
+    # ==========================================
+    elif role == "Technician":
+        tickets = (
+            query.filter(
+                Ticket.assigned_to == user_id
+            )
+            .all()
+        )
+
+    # ==========================================
+    # Employee -> Only Created Tickets
+    # ==========================================
+    else:
+        tickets = (
+            query.filter(
+                Ticket.created_by == user_id
+            )
+            .all()
+        )
 
     return [
         {
@@ -113,13 +144,13 @@ def get_all_tickets(db: Session):
             "title": ticket.title,
             "description": ticket.description,
 
-            # AI Analysis
+            # AI Classification
             "category": ticket.category,
             "subcategory": ticket.subcategory,
             "keywords": ticket.keywords,
             "confidence": ticket.confidence,
 
-            # AI Priority
+            # Priority
             "priority": ticket.priority,
             "priority_reason": ticket.priority_reason,
 
@@ -146,27 +177,40 @@ def get_all_tickets(db: Session):
         }
         for ticket in tickets
     ]
-
 # ==========================================
 # Get Ticket By ID
 # ==========================================
-def get_ticket_by_id(db: Session, ticket_id: int):
-    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+def get_ticket_by_id(
+    db: Session,
+    ticket_id: int,
+):
+    ticket = (
+        db.query(Ticket)
+        .filter(Ticket.id == ticket_id)
+        .first()
+    )
 
     if not ticket:
-        raise HTTPException(status_code=404, detail="Ticket not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Ticket not found",
+        )
 
     return ticket
-
 
 # ==========================================
 # Update Ticket
 # ==========================================
-def update_ticket(db: Session, ticket_id: int, ticket_data: TicketUpdate):
-    ticket = get_ticket_by_id(db, ticket_id)
+def update_ticket(
+    db: Session,
+    ticket_id: int,
+    ticket_data: TicketUpdate,
+):
 
-    if ticket_data.status not in TICKET_STATUS:
-        raise HTTPException(status_code=400, detail="Invalid ticket status")
+    ticket = get_ticket_by_id(
+        db,
+        ticket_id,
+    )
 
     ticket.title = ticket_data.title
     ticket.description = ticket_data.description
@@ -178,19 +222,26 @@ def update_ticket(db: Session, ticket_id: int, ticket_data: TicketUpdate):
 
     return ticket
 
-
 # ==========================================
 # Delete Ticket
 # ==========================================
-def delete_ticket(db: Session, ticket_id: int):
-    ticket = get_ticket_by_id(db, ticket_id)
+def delete_ticket(
+    db: Session,
+    ticket_id: int,
+):
+
+    ticket = get_ticket_by_id(
+        db,
+        ticket_id,
+    )
 
     db.delete(ticket)
+
     db.commit()
 
-    return {"message": "Ticket deleted successfully"}
-
-
+    return {
+        "message": "Ticket deleted successfully"
+    }
 # ==========================================
 # Assign Ticket
 # ==========================================

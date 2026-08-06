@@ -1,118 +1,144 @@
-import { Search, Plus } from "lucide-react";
+import type { Ticket } from "../../types/ticket";
+import {
+  Eye,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 
-interface TicketToolbarProps {
-  search: string;
-  setSearch: (value: string) => void;
+interface TicketTableProps {
+  tickets: Ticket[];
 
-  status: string;
-  setStatus: (value: string) => void;
-
-  priority: string;
-  setPriority: (value: string) => void;
-
-  onCreate: () => void;
+  onView: (ticket: Ticket) => void;
+  onEdit: (ticket: Ticket) => void;
+  onDelete: (ticket: Ticket) => void;
 }
 
-export default function TicketToolbar({
-  search,
-  setSearch,
+export default function TicketTable({
+  tickets,
+  onView,
+  onEdit,
+  onDelete,
+}: TicketTableProps) {
 
-  status,
-  setStatus,
+  const role = localStorage.getItem("role");
 
-  priority,
-  setPriority,
+  const isAdmin = role === "Admin";
+  const isTechnician = role === "Technician";
+  
 
-  onCreate,
-}: TicketToolbarProps) {
   return (
-    <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <div className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 shadow-lg">
 
-      {/* Left Side */}
-      <div className="flex flex-wrap items-center gap-4">
+      <table className="w-full">
 
-        {/* Search */}
-        <div className="relative">
+        <thead className="bg-zinc-800">
+          <tr className="text-left text-sm uppercase tracking-wide text-zinc-300">
 
-          <Search
-            size={18}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
-          />
+            <th className="px-6 py-4">ID</th>
+            <th className="px-6 py-4">Title</th>
+            <th className="px-6 py-4">Priority</th>
+            <th className="px-6 py-4">Status</th>
+            <th className="px-6 py-4">Assigned To</th>
+            <th className="px-6 py-4">Created</th>
+            <th className="px-6 py-4 text-center">
+              Actions
+            </th>
 
-          <input
-            type="text"
-            placeholder="Search tickets..."
-            value={search}
-            onChange={(e) =>
-              setSearch(e.target.value)
-            }
-            className="w-72 rounded-lg border border-zinc-700 bg-zinc-900 py-2 pl-10 pr-4 text-white outline-none transition focus:border-blue-500"
-          />
+          </tr>
+        </thead>
 
-        </div>
+        <tbody>
 
-        {/* Status */}
-        <select
-          value={status}
-          onChange={(e) =>
-            setStatus(e.target.value)
-          }
-          className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-white outline-none focus:border-blue-500"
-        >
-          <option value="">
-            All Status
-          </option>
+          {!tickets || tickets.length === 0 ? (
 
-          <option value="Open">
-            Open
-          </option>
+            <tr>
+              <td
+                colSpan={7}
+                className="py-10 text-center text-zinc-500"
+              >
+                No tickets found.
+              </td>
+            </tr>
 
-          <option value="Assigned">
-            Assigned
-          </option>
+          ) : (
 
-          <option value="Resolved">
-            Resolved
-          </option>
+            tickets.map((ticket) => (
 
-        </select>
+              <tr
+                key={ticket.id}
+                className="border-t border-zinc-800 hover:bg-zinc-800/40"
+              >
 
-        {/* Priority */}
-        <select
-          value={priority}
-          onChange={(e) =>
-            setPriority(e.target.value)
-          }
-          className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-white outline-none focus:border-blue-500"
-        >
-          <option value="">
-            All Priority
-          </option>
+                <td className="px-6 py-4 font-medium">
+                  #{ticket.id}
+                </td>
 
-          <option value="High">
-            High
-          </option>
+                <td className="px-6 py-4">
+                  {ticket.title}
+                </td>
 
-          <option value="Medium">
-            Medium
-          </option>
+                <td className="px-6 py-4">
+                  {ticket.priority}
+                </td>
 
-          <option value="Low">
-            Low
-          </option>
+                <td className="px-6 py-4">
+                  {ticket.status}
+                </td>
 
-        </select>
+                <td className="px-6 py-4">
+                  {ticket.assigned_name ?? "Unassigned"}
+                </td>
 
-      </div>
+                <td className="px-6 py-4">
+                  {new Date(ticket.created_at).toLocaleDateString()}
+                </td>
 
-      {/* Right Side */}
-      <button
-        onClick={onCreate}
-        className="flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 font-medium text-white transition hover:bg-blue-700"
-      >
-        <Plus size={18} />
-        New Ticket
-      </button>
+                <td className="px-6 py-4">
+
+                  <div className="flex justify-center gap-2">
+
+                    <button
+                      onClick={() => onView(ticket)}
+                      className="rounded-md p-2 text-zinc-300 hover:bg-zinc-700 hover:text-white"
+                    >
+                      <Eye size={18}/>
+                    </button>
+
+                    {(isAdmin || isTechnician) && (
+
+                      <button
+                        onClick={() => onEdit(ticket)}
+                        className="rounded-md p-2 text-blue-400 hover:bg-blue-600 hover:text-white"
+                      >
+                        <Pencil size={18}/>
+                      </button>
+
+                    )}
+
+                    {isAdmin && (
+
+                      <button
+                        onClick={() => onDelete(ticket)}
+                        className="rounded-md p-2 text-red-400 hover:bg-red-600 hover:text-white"
+                      >
+                        <Trash2 size={18}/>
+                      </button>
+
+                    )}
+
+                  </div>
+
+                </td>
+
+              </tr>
+
+            ))
+
+          )}
+
+        </tbody>
+
+      </table>
 
     </div>
   );

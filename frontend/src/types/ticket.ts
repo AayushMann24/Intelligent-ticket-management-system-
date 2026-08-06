@@ -4,12 +4,27 @@ export interface Ticket {
   title: string;
   description: string;
 
+  category?: string;
+  subcategory?: string;
+  keywords?: string[];
+
   priority: string;
+  priority_reason?: string;
+
   status: string;
 
   created_by: number;
 
   assigned_to: number | null;
+
+  // ADD THIS
+  assigned_name?: string;
+
+  assignment_reason?: string;
+
+  ai_processed?: boolean;
+
+  confidence?: number;
 
   created_at: string;
 }

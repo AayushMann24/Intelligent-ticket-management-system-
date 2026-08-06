@@ -17,19 +17,8 @@ import type { Ticket } from "../types/ticket";
 export default function TicketsPage() {
   const [searchParams] = useSearchParams();
 
-  // ==============================
-  // Read Query Parameters
-  // ==============================
-
-  const statusFromDashboard =
-    searchParams.get("status");
-
-  const searchFromNavbar =
-    searchParams.get("search");
-
-  // ==============================
-  // Ticket Hook
-  // ==============================
+  const statusFromDashboard = searchParams.get("status");
+  const searchFromNavbar = searchParams.get("search");
 
   const {
     tickets,
@@ -49,10 +38,6 @@ export default function TicketsPage() {
     removeTicket,
   } = useTickets();
 
-  // ==============================
-  // Apply Dashboard Status Filter
-  // ==============================
-
   useEffect(() => {
     if (statusFromDashboard) {
       setStatus(statusFromDashboard);
@@ -61,21 +46,11 @@ export default function TicketsPage() {
     }
   }, [statusFromDashboard, setStatus]);
 
-  // ==============================
-  // Apply Navbar Search
-  // ==============================
-
   useEffect(() => {
     if (searchFromNavbar) {
       setSearch(searchFromNavbar);
-    } else {
-      setSearch("");
     }
   }, [searchFromNavbar, setSearch]);
-
-  // ==============================
-  // Modal States
-  // ==============================
 
   const [selectedTicket, setSelectedTicket] =
     useState<Ticket | null>(null);
@@ -89,10 +64,6 @@ export default function TicketsPage() {
   const [isDeleteOpen, setIsDeleteOpen] =
     useState(false);
 
-  // ==============================
-  // Loading
-  // ==============================
-
   if (loading) {
     return (
       <MainLayout>
@@ -104,10 +75,6 @@ export default function TicketsPage() {
       </MainLayout>
     );
   }
-
-  // ==============================
-  // UI
-  // ==============================
 
   return (
     <MainLayout>
