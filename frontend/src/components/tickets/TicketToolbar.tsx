@@ -1,145 +1,87 @@
-import type { Ticket } from "../../types/ticket";
-import {
-  Eye,
-  Pencil,
-  Trash2,
-} from "lucide-react";
+import { Search, Plus } from "lucide-react";
 
-interface TicketTableProps {
-  tickets: Ticket[];
+interface TicketToolbarProps {
+  search: string;
+  setSearch: (value: string) => void;
 
-  onView: (ticket: Ticket) => void;
-  onEdit: (ticket: Ticket) => void;
-  onDelete: (ticket: Ticket) => void;
+  status: string;
+  setStatus: (value: string) => void;
+
+  priority: string;
+  setPriority: (value: string) => void;
+
+  onCreate: () => void;
 }
 
-export default function TicketTable({
-  tickets,
-  onView,
-  onEdit,
-  onDelete,
-}: TicketTableProps) {
-
+export default function TicketToolbar({
+  search,
+  setSearch,
+  status,
+  setStatus,
+  priority,
+  setPriority,
+  onCreate,
+}: TicketToolbarProps) {
   const role = localStorage.getItem("role");
 
-  const isAdmin = role === "Admin";
-  const isTechnician = role === "Technician";
-  
-
   return (
-    <div className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 shadow-lg">
+    <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+      {/* Left Side */}
+      <div className="flex flex-wrap items-center gap-4">
 
-      <table className="w-full">
+        {/* Search */}
+        <div className="relative">
+          <Search
+            size={18}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
+          />
 
-        <thead className="bg-zinc-800">
-          <tr className="text-left text-sm uppercase tracking-wide text-zinc-300">
+          <input
+            type="text"
+            placeholder="Search tickets..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-72 rounded-lg border border-zinc-700 bg-zinc-900 py-2 pl-10 pr-4 text-white outline-none focus:border-blue-500"
+          />
+        </div>
 
-            <th className="px-6 py-4">ID</th>
-            <th className="px-6 py-4">Title</th>
-            <th className="px-6 py-4">Priority</th>
-            <th className="px-6 py-4">Status</th>
-            <th className="px-6 py-4">Assigned To</th>
-            <th className="px-6 py-4">Created</th>
-            <th className="px-6 py-4 text-center">
-              Actions
-            </th>
+        {/* Status */}
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-white outline-none focus:border-blue-500"
+        >
+          <option value="">All Status</option>
+          <option value="Open">Open</option>
+          <option value="Assigned">Assigned</option>
+          <option value="Resolved">Resolved</option>
+        </select>
 
-          </tr>
-        </thead>
+        {/* Priority */}
+        <select
+          value={priority}
+          onChange={(e) => setPriority(e.target.value)}
+          className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-white outline-none focus:border-blue-500"
+        >
+          <option value="">All Priority</option>
+          <option value="High">High</option>
+          <option value="Medium">Medium</option>
+          <option value="Low">Low</option>
+        </select>
 
-        <tbody>
+      </div>
 
-          {!tickets || tickets.length === 0 ? (
+      {/* Right Side */}
 
-            <tr>
-              <td
-                colSpan={7}
-                className="py-10 text-center text-zinc-500"
-              >
-                No tickets found.
-              </td>
-            </tr>
-
-          ) : (
-
-            tickets.map((ticket) => (
-
-              <tr
-                key={ticket.id}
-                className="border-t border-zinc-800 hover:bg-zinc-800/40"
-              >
-
-                <td className="px-6 py-4 font-medium">
-                  #{ticket.id}
-                </td>
-
-                <td className="px-6 py-4">
-                  {ticket.title}
-                </td>
-
-                <td className="px-6 py-4">
-                  {ticket.priority}
-                </td>
-
-                <td className="px-6 py-4">
-                  {ticket.status}
-                </td>
-
-                <td className="px-6 py-4">
-                  {ticket.assigned_name ?? "Unassigned"}
-                </td>
-
-                <td className="px-6 py-4">
-                  {new Date(ticket.created_at).toLocaleDateString()}
-                </td>
-
-                <td className="px-6 py-4">
-
-                  <div className="flex justify-center gap-2">
-
-                    <button
-                      onClick={() => onView(ticket)}
-                      className="rounded-md p-2 text-zinc-300 hover:bg-zinc-700 hover:text-white"
-                    >
-                      <Eye size={18}/>
-                    </button>
-
-                    {(isAdmin || isTechnician) && (
-
-                      <button
-                        onClick={() => onEdit(ticket)}
-                        className="rounded-md p-2 text-blue-400 hover:bg-blue-600 hover:text-white"
-                      >
-                        <Pencil size={18}/>
-                      </button>
-
-                    )}
-
-                    {isAdmin && (
-
-                      <button
-                        onClick={() => onDelete(ticket)}
-                        className="rounded-md p-2 text-red-400 hover:bg-red-600 hover:text-white"
-                      >
-                        <Trash2 size={18}/>
-                      </button>
-
-                    )}
-
-                  </div>
-
-                </td>
-
-              </tr>
-
-            ))
-
-          )}
-
-        </tbody>
-
-      </table>
-
+      {role !== "Technician" && (
+        <button
+          onClick={onCreate}
+          className="flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 font-medium text-white transition hover:bg-blue-700"
+        >
+          <Plus size={18} />
+          New Ticket
+        </button>
+      )}
     </div>
   );
 }

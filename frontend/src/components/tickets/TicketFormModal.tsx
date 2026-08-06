@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
 
-import useUsers from "../../hooks/useUsers";
-
 import type { Ticket } from "../../types/ticket";
-import type { User } from "../../types/user";
 
 interface TicketFormModalProps {
   open: boolean;
@@ -26,17 +23,11 @@ export default function TicketFormModal({
   onClose,
   onSubmit,
 }: TicketFormModalProps) {
-  const role = localStorage.getItem("role");
-  const isAdmin = role === "Admin";
-
-  // Always call hooks
-  const { users, loading } = useUsers();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("Medium");
   const [status, setStatus] = useState("Open");
-  const [assignedTo, setAssignedTo] = useState<number | null>(null);
 
   useEffect(() => {
     if (ticket) {
@@ -44,13 +35,11 @@ export default function TicketFormModal({
       setDescription(ticket.description);
       setPriority(ticket.priority);
       setStatus(ticket.status);
-      setAssignedTo(ticket.assigned_to);
     } else {
       setTitle("");
       setDescription("");
       setPriority("Medium");
       setStatus("Open");
-      setAssignedTo(null);
     }
   }, [ticket]);
 
@@ -72,12 +61,13 @@ export default function TicketFormModal({
       description,
       priority,
       status,
-      assigned_to: isAdmin ? assignedTo : null,
+      assigned_to: null,
     });
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+
       <div className="w-full max-w-xl rounded-xl bg-zinc-900 p-6">
 
         <h2 className="mb-6 text-2xl font-bold text-white">
@@ -121,32 +111,6 @@ export default function TicketFormModal({
             <option value="Resolved">Resolved</option>
           </select>
 
-          {isAdmin && (
-            <select
-              value={assignedTo ?? ""}
-              onChange={(e) =>
-                setAssignedTo(
-                  e.target.value === ""
-                    ? null
-                    : Number(e.target.value)
-                )
-              }
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-3 text-white"
-            >
-              <option value="">Unassigned</option>
-
-              {!loading &&
-                users.map((user: User) => (
-                  <option
-                    key={user.id}
-                    value={user.id}
-                  >
-                    {user.name}
-                  </option>
-                ))}
-            </select>
-          )}
-
         </div>
 
         <div className="mt-8 flex justify-end gap-3">
@@ -168,6 +132,7 @@ export default function TicketFormModal({
         </div>
 
       </div>
+
     </div>
   );
 }
