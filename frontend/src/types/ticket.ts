@@ -8,6 +8,8 @@ export interface Ticket {
   subcategory?: string;
   keywords?: string[];
 
+  confidence?: number;
+
   priority: string;
   priority_reason?: string;
 
@@ -16,15 +18,11 @@ export interface Ticket {
   created_by: number;
 
   assigned_to: number | null;
-
-  // ADD THIS
   assigned_name?: string;
 
   assignment_reason?: string;
 
   ai_processed?: boolean;
-
-  confidence?: number;
 
   created_at: string;
 }

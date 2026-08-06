@@ -43,6 +43,10 @@ export default function TicketTable({
             </th>
 
             <th className="px-6 py-4">
+              AI
+            </th>
+
+            <th className="px-6 py-4">
               Status
             </th>
 
@@ -68,7 +72,7 @@ export default function TicketTable({
             <tr>
 
               <td
-                colSpan={7}
+                colSpan={8}
                 className="py-10 text-center text-zinc-500"
               >
                 No tickets found.
@@ -95,6 +99,19 @@ export default function TicketTable({
 
                 <td className="px-6 py-4">
                   {ticket.priority}
+                </td>
+
+                {/* AI Badge */}
+                <td className="px-6 py-4">
+                  {ticket.ai_processed ? (
+                    <span className="rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white">
+                      🤖 AI
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-zinc-700 px-3 py-1 text-xs font-semibold text-zinc-300">
+                      Manual
+                    </span>
+                  )}
                 </td>
 
                 <td className="px-6 py-4">

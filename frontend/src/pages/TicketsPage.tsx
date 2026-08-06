@@ -16,7 +16,7 @@ import type { Ticket } from "../types/ticket";
 
 export default function TicketsPage() {
   const [searchParams] = useSearchParams();
-
+  const createTicket = searchParams.get("create");
   const statusFromDashboard = searchParams.get("status");
   const searchFromNavbar = searchParams.get("search");
 
@@ -37,7 +37,12 @@ export default function TicketsPage() {
     editTicket,
     removeTicket,
   } = useTickets();
-
+  useEffect(() => {
+  if (createTicket === "true") {
+    setSelectedTicket(null);
+    setIsFormOpen(true);
+  }
+}, [createTicket]);
   useEffect(() => {
     if (statusFromDashboard) {
       setStatus(statusFromDashboard);

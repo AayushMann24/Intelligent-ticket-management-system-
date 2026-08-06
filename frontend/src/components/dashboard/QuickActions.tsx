@@ -15,8 +15,8 @@ export default function QuickActions() {
       title: "New Ticket",
       icon: <Plus size={34} />,
       color: "bg-blue-600",
-      onClick: () => navigate("/tickets/new"),
-    },
+      onClick: () => navigate("/tickets?create=true"),
+  },
     {
       title: "Manage Users",
       icon: <Users size={34} />,
