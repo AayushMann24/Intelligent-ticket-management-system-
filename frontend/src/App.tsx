@@ -9,6 +9,7 @@ import UsersPage from "./pages/UsersPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import AssistantPage from "./pages/AssistantPage";
 import SettingsPage from "./pages/SettingsPage";
+import ProfilePage from "./pages/ProfilePage";
 function App() {
   return (
     <BrowserRouter>
@@ -32,6 +33,7 @@ function App() {
         <Route path="/assistant" element={<AssistantPage />} />
 
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route
           path="/users"
           element={<UsersPage />}

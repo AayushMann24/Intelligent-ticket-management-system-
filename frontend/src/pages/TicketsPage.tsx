@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import MainLayout from "../layouts/MainLayout";
 
@@ -14,6 +15,22 @@ import DeleteConfirmModal from "../components/tickets/DeleteConfirmModal";
 import type { Ticket } from "../types/ticket";
 
 export default function TicketsPage() {
+  const [searchParams] = useSearchParams();
+
+  // ==============================
+  // Read Query Parameters
+  // ==============================
+
+  const statusFromDashboard =
+    searchParams.get("status");
+
+  const searchFromNavbar =
+    searchParams.get("search");
+
+  // ==============================
+  // Ticket Hook
+  // ==============================
+
   const {
     tickets,
     loading,
@@ -32,6 +49,34 @@ export default function TicketsPage() {
     removeTicket,
   } = useTickets();
 
+  // ==============================
+  // Apply Dashboard Status Filter
+  // ==============================
+
+  useEffect(() => {
+    if (statusFromDashboard) {
+      setStatus(statusFromDashboard);
+    } else {
+      setStatus("");
+    }
+  }, [statusFromDashboard, setStatus]);
+
+  // ==============================
+  // Apply Navbar Search
+  // ==============================
+
+  useEffect(() => {
+    if (searchFromNavbar) {
+      setSearch(searchFromNavbar);
+    } else {
+      setSearch("");
+    }
+  }, [searchFromNavbar, setSearch]);
+
+  // ==============================
+  // Modal States
+  // ==============================
+
   const [selectedTicket, setSelectedTicket] =
     useState<Ticket | null>(null);
 
@@ -43,6 +88,10 @@ export default function TicketsPage() {
 
   const [isDeleteOpen, setIsDeleteOpen] =
     useState(false);
+
+  // ==============================
+  // Loading
+  // ==============================
 
   if (loading) {
     return (
@@ -56,11 +105,16 @@ export default function TicketsPage() {
     );
   }
 
+  // ==============================
+  // UI
+  // ==============================
+
   return (
     <MainLayout>
-
       <h1 className="mb-8 text-3xl font-bold text-white">
-        Ticket Management
+        {statusFromDashboard
+          ? `${statusFromDashboard} Tickets`
+          : "Ticket Management"}
       </h1>
 
       <TicketToolbar
@@ -97,26 +151,20 @@ export default function TicketsPage() {
         ticket={selectedTicket}
         onClose={() => setIsFormOpen(false)}
         onSubmit={async (ticketData) => {
-
           if (selectedTicket) {
-
             await editTicket(
               selectedTicket.id,
               ticketData
             );
-
           } else {
-
             await addTicket({
               title: ticketData.title,
               description: ticketData.description,
               priority: ticketData.priority,
             });
-
           }
 
           setIsFormOpen(false);
-
         }}
       />
 
@@ -131,16 +179,13 @@ export default function TicketsPage() {
         ticketTitle={selectedTicket?.title ?? ""}
         onClose={() => setIsDeleteOpen(false)}
         onConfirm={async () => {
-
           if (!selectedTicket) return;
 
           await removeTicket(selectedTicket.id);
 
           setIsDeleteOpen(false);
-
         }}
       />
-
     </MainLayout>
   );
 }

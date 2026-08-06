@@ -74,7 +74,7 @@ export default function DashboardPage() {
           value={summary.open_tickets}
           icon={<Clock3 size={28} />}
           color="bg-yellow-500"
-          onClick={() => navigate("/tickets")}
+          onClick={() => navigate("/tickets?status=Open")}
         />
 
         <StatCard
@@ -82,7 +82,7 @@ export default function DashboardPage() {
           value={summary.assigned_tickets}
           icon={<ClipboardList size={28} />}
           color="bg-purple-600"
-          onClick={() => navigate("/tickets")}
+          onClick={() => navigate("/tickets?status=Assigned")}
         />
 
         <StatCard
@@ -90,7 +90,7 @@ export default function DashboardPage() {
           value={summary.resolved_tickets}
           icon={<CheckCircle size={28} />}
           color="bg-green-600"
-          onClick={() => navigate("/tickets")}
+          onClick={() => navigate("/tickets?status=Resolved")}
         />
       </div>
 

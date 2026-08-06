@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.database.connection import engine
 from app.database.base import Base
-
+from app.routers import assistant
 import app.models.user
 import app.models.ticket
 
@@ -34,7 +34,7 @@ app.include_router(ticket.router)
 app.include_router(user.router)
 #app.include_router(ai.router)
 app.include_router(dashboard_router)
-
+app.include_router(assistant.router)
 
 @app.get("/")
 def home():
