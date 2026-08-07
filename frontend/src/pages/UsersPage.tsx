@@ -38,7 +38,7 @@ export default function UsersPage() {
     return (
       <MainLayout>
         <div className="flex h-96 items-center justify-center">
-          <h2 className="text-xl text-white">
+          <h2 className="text-xl text-slate-700 dark:text-white">
             Loading Users...
           </h2>
         </div>
@@ -49,9 +49,17 @@ export default function UsersPage() {
   return (
     <MainLayout>
 
-      <h1 className="mb-8 text-3xl font-bold text-white">
-        Users
-      </h1>
+      <div className="mb-8">
+
+        <h1 className="text-4xl font-bold text-slate-900 dark:text-white">
+          User Management
+        </h1>
+
+        <p className="mt-2 text-slate-500 dark:text-slate-400">
+          Manage administrators, employees and technicians.
+        </p>
+
+      </div>
 
       <UserToolbar
         search={search}

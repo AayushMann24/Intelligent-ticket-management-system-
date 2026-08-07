@@ -1,5 +1,4 @@
-import axios from "axios";
-
+import api from "./api";
 import type {
   User,
   UpdateRoleRequest,
@@ -19,7 +18,7 @@ const authHeaders = () => ({
 // Get All Users
 // =====================================
 export async function getUsers(): Promise<User[]> {
-  const response = await axios.get<User[]>(
+  const response = await api.get<User[]>(
     `${API}/users`,
     authHeaders()
   );
@@ -33,7 +32,7 @@ export async function getUsers(): Promise<User[]> {
 export async function getUserById(
   userId: number
 ): Promise<User> {
-  const response = await axios.get<User>(
+  const response = await api.get<User>(
     `${API}/users/${userId}`,
     authHeaders()
   );
@@ -48,7 +47,7 @@ export async function updateUserRole(
   userId: number,
   role: UpdateRoleRequest
 ): Promise<User> {
-  const response = await axios.put<User>(
+  const response = await api.put<User>(
     `${API}/users/${userId}/role`,
     role,
     authHeaders()

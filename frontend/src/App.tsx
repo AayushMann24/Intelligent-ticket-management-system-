@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
@@ -10,33 +10,27 @@ import AnalyticsPage from "./pages/AnalyticsPage";
 import AssistantPage from "./pages/AssistantPage";
 import SettingsPage from "./pages/SettingsPage";
 import ProfilePage from "./pages/ProfilePage";
+
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
+    <Routes>
+      {/* Public Pages */}
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
 
-        {/* Public Pages */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+      {/* Protected Pages */}
+      <Route path="/dashboard" element={<DashboardPage />} />
+      <Route path="/tickets" element={<TicketsPage />} />
+      <Route path="/users" element={<UsersPage />} />
+      <Route path="/analytics" element={<AnalyticsPage />} />
+      <Route path="/assistant" element={<AssistantPage />} />
+      <Route path="/settings" element={<SettingsPage />} />
+      <Route path="/profile" element={<ProfilePage />} />
 
-        {/* Protected Pages */}
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/tickets" element={<TicketsPage />} />
-        <Route path="/users" element={<UsersPage />} />
-
-        {/* Default */}
-        <Route path="*" element={<Navigate to="/" />}/>
-
-        <Route path="/analytics" element={<AnalyticsPage />} />
-
-        <Route path="/assistant" element={<AssistantPage />} />
-
-        <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-
-      </Routes>
-    </BrowserRouter>
+      {/* Default */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 

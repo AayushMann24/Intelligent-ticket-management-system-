@@ -1,8 +1,9 @@
-import type { User } from "../../types/user";
+import { X, User, Mail, Shield } from "lucide-react";
+import type { User as UserType } from "../../types/user";
 
 interface UserDetailsModalProps {
   open: boolean;
-  user: User | null;
+  user: UserType | null;
   onClose: () => void;
 }
 
@@ -11,96 +12,92 @@ export default function UserDetailsModal({
   user,
   onClose,
 }: UserDetailsModalProps) {
+
   if (!open || !user) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="w-full max-w-lg rounded-xl bg-zinc-900 p-6 shadow-2xl">
 
-        {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-white">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
+
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+      >
+
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5 dark:border-slate-800">
+
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
             User Details
           </h2>
 
           <button
             onClick={onClose}
-            className="rounded-lg bg-zinc-700 px-4 py-2 text-white transition hover:bg-zinc-600"
+            className="rounded-lg p-2 hover:bg-slate-100 dark:hover:bg-slate-800"
           >
-            Close
+            <X />
           </button>
+
         </div>
 
-        {/* User Information */}
-        <div className="space-y-5">
+        <div className="space-y-5 p-6">
 
-          <div>
-            <p className="text-sm text-zinc-400">
-              User ID
-            </p>
+          <Info icon={<User size={18} />} label="Name" value={user.name} />
 
-            <p className="text-lg font-semibold text-white">
-              #{user.id}
-            </p>
-          </div>
+          <Info icon={<Mail size={18} />} label="Email" value={user.email} />
 
-          <div>
-            <p className="text-sm text-zinc-400">
-              Name
-            </p>
-
-            <p className="text-white">
-              {user.name}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-sm text-zinc-400">
-              Email
-            </p>
-
-            <p className="text-white">
-              {user.email}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-sm text-zinc-400">
-              Role
-            </p>
-
-            <p className="text-white">
-              {user.role}
-            </p>
-          </div>
+          <Info icon={<Shield size={18} />} label="Role" value={user.role} />
 
           {user.created_at && (
-            <div>
-              <p className="text-sm text-zinc-400">
-                Created At
-              </p>
-
-              <p className="text-white">
-                {new Date(
-                  user.created_at
-                ).toLocaleString()}
-              </p>
-            </div>
+            <Info
+              label="Created At"
+              value={new Date(user.created_at).toLocaleString()}
+            />
           )}
 
         </div>
 
-        {/* Footer */}
-        <div className="mt-8 flex justify-end">
+        <div className="border-t border-slate-200 px-6 py-5 dark:border-slate-800">
+
           <button
             onClick={onClose}
-            className="rounded-lg bg-blue-600 px-5 py-2 text-white transition hover:bg-blue-700"
+            className="w-full rounded-xl bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700"
           >
-            Done
+            Close
           </button>
+
         </div>
 
       </div>
+
+    </div>
+
+  );
+}
+
+function Info({
+  icon,
+  label,
+  value,
+}: {
+  icon?: React.ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div>
+
+      <p className="mb-2 flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+        {icon}
+        {label}
+      </p>
+
+      <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white">
+        {value}
+      </div>
+
     </div>
   );
 }

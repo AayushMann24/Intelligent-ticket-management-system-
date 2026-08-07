@@ -16,7 +16,7 @@ export default function QuickActions() {
       icon: <Plus size={34} />,
       color: "bg-blue-600",
       onClick: () => navigate("/tickets?create=true"),
-  },
+    },
     {
       title: "Manage Users",
       icon: <Users size={34} />,
@@ -39,12 +39,14 @@ export default function QuickActions() {
 
   return (
     <>
-      <h2 className="mb-6 text-2xl font-bold text-white">
+      <h2 className="mb-6 text-2xl font-bold text-slate-900 transition-colors duration-300 dark:text-white">
         Quick Actions
       </h2>
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+
         {actions.map((action) => (
+
           <div
             key={action.title}
             onClick={action.onClick}
@@ -52,32 +54,40 @@ export default function QuickActions() {
               cursor-pointer
               rounded-2xl
               border
-              border-zinc-800
-              bg-zinc-900
+              border-slate-200
+              bg-white
               p-8
+              shadow-sm
               transition-all
               duration-300
+
               hover:-translate-y-1
               hover:border-blue-500
-              hover:shadow-lg
-              hover:shadow-blue-500/10
+              hover:shadow-xl
+
+              dark:border-slate-800
+              dark:bg-slate-900
             "
           >
+
             <div className="flex flex-col items-center">
 
               <div
-                className={`${action.color} mb-6 rounded-2xl p-5 text-white`}
+                className={`${action.color} mb-6 rounded-2xl p-5 text-white shadow-md`}
               >
                 {action.icon}
               </div>
 
-              <h3 className="text-xl font-semibold text-white">
+              <h3 className="text-xl font-semibold text-slate-900 transition-colors duration-300 dark:text-white">
                 {action.title}
               </h3>
 
             </div>
+
           </div>
+
         ))}
+
       </div>
     </>
   );

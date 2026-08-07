@@ -1,5 +1,4 @@
-import axios from "axios";
-
+import api from "./api";
 const API = "http://127.0.0.1:8000";
 
 const getToken = () => localStorage.getItem("token");
@@ -37,7 +36,7 @@ export async function getAllTickets() {
 
   console.log("Calling:", `${API}/tickets`);
 
-  const response = await axios.get(
+  const response = await api.get(
     `${API}/tickets`,
     authConfig()
   );
@@ -53,7 +52,7 @@ export async function getAllTickets() {
 export async function createTicket(
   ticket: TicketPayload
 ) {
-  const response = await axios.post(
+  const response = await api.post(
     `${API}/tickets`,
     ticket,
     authConfig()
@@ -69,7 +68,7 @@ export async function updateTicket(
   ticketId: number,
   ticket: TicketUpdatePayload
 ) {
-  const response = await axios.put(
+  const response = await api.put(
     `${API}/tickets/${ticketId}`,
     ticket,
     authConfig()
@@ -84,7 +83,7 @@ export async function updateTicket(
 export async function deleteTicket(
   ticketId: number
 ) {
-  const response = await axios.delete(
+  const response = await api.delete(
     `${API}/tickets/${ticketId}`,
     authConfig()
   );
@@ -99,7 +98,7 @@ export async function assignTicket(
   ticketId: number,
   assignedTo: number
 ) {
-  const response = await axios.put(
+  const response = await api.put(
     `${API}/tickets/${ticketId}/assign`,
     {
       assigned_to: assignedTo,
@@ -117,7 +116,7 @@ export async function updateTicketStatus(
   ticketId: number,
   status: string
 ) {
-  const response = await axios.patch(
+  const response = await api.patch(
     `${API}/tickets/${ticketId}/status`,
     {
       status,

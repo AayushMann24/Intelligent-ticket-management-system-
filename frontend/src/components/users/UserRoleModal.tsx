@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
+import { X, Shield } from "lucide-react";
 
 import type { User } from "../../types/user";
 
 interface UserRoleModalProps {
   open: boolean;
   user: User | null;
-
   onClose: () => void;
-
   onSave: (role: string) => Promise<void>;
 }
 
@@ -17,6 +16,7 @@ export default function UserRoleModal({
   onClose,
   onSave,
 }: UserRoleModalProps) {
+
   const [role, setRole] = useState("Employee");
 
   useEffect(() => {
@@ -28,76 +28,90 @@ export default function UserRoleModal({
   if (!open || !user) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
 
-      <div className="w-full max-w-md rounded-xl bg-zinc-900 p-6 shadow-2xl">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
 
-        {/* Header */}
-        <h2 className="mb-6 text-2xl font-bold text-white">
-          Change User Role
-        </h2>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+      >
 
-        {/* User Information */}
-        <div className="mb-6 space-y-2">
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5 dark:border-slate-800">
 
-          <div>
-            <p className="text-sm text-zinc-400">
-              Name
-            </p>
-
-            <p className="text-white font-medium">
-              {user.name}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-sm text-zinc-400">
-              Email
-            </p>
-
-            <p className="text-white">
-              {user.email}
-            </p>
-          </div>
-
-        </div>
-
-        {/* Role Selection */}
-        <div className="mb-8">
-
-          <label className="mb-2 block text-sm text-zinc-400">
-            Role
-          </label>
-
-          <select
-            value={role}
-            onChange={(e) =>
-              setRole(e.target.value)
-            }
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-3 text-white"
-          >
-            <option value="Admin">
-              Admin
-            </option>
-
-            <option value="Technician">
-              Technician
-            </option>
-
-            <option value="Employee">
-              Employee
-            </option>
-
-          </select>
-
-        </div>
-
-        {/* Buttons */}
-        <div className="flex justify-end gap-3">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+            Change Role
+          </h2>
 
           <button
             onClick={onClose}
-            className="rounded-lg bg-zinc-700 px-5 py-2 text-white hover:bg-zinc-600"
+            className="rounded-lg p-2 hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            <X />
+          </button>
+
+        </div>
+
+        <div className="space-y-5 p-6">
+
+          <div>
+
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              User
+            </p>
+
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+              {user.name}
+            </h3>
+
+            <p className="text-slate-500">
+              {user.email}
+            </p>
+
+          </div>
+
+          <div>
+
+            <label className="mb-2 flex items-center gap-2 font-medium text-slate-700 dark:text-slate-300">
+
+              <Shield size={18} />
+
+              Role
+
+            </label>
+
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="
+                w-full
+                rounded-xl
+                border
+                border-slate-300
+                bg-slate-50
+                p-3
+                text-slate-900
+                dark:border-slate-700
+                dark:bg-slate-800
+                dark:text-white
+              "
+            >
+              <option value="Admin">Admin</option>
+              <option value="Technician">Technician</option>
+              <option value="Employee">Employee</option>
+            </select>
+
+          </div>
+
+        </div>
+
+        <div className="flex justify-end gap-3 border-t border-slate-200 px-6 py-5 dark:border-slate-800">
+
+          <button
+            onClick={onClose}
+            className="rounded-xl border border-slate-300 px-5 py-2.5 dark:border-slate-700"
           >
             Cancel
           </button>
@@ -106,9 +120,9 @@ export default function UserRoleModal({
             onClick={async () => {
               await onSave(role);
             }}
-            className="rounded-lg bg-blue-600 px-5 py-2 text-white hover:bg-blue-700"
+            className="rounded-xl bg-blue-600 px-5 py-2.5 font-semibold text-white hover:bg-blue-700"
           >
-            Save
+            Save Changes
           </button>
 
         </div>
@@ -116,5 +130,6 @@ export default function UserRoleModal({
       </div>
 
     </div>
+
   );
 }

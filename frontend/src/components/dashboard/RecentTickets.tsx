@@ -1,38 +1,40 @@
 import { ArrowRight, Clock3, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import type { RecentTicket } from "../../services/dashboardService";
 
 interface RecentTicketsProps {
   tickets: RecentTicket[];
 }
+
 function priorityColor(priority: string) {
   switch (priority) {
     case "High":
-      return "bg-red-500/20 text-red-400 border border-red-500/30";
+      return "bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400";
 
     case "Medium":
-      return "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30";
+      return "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400";
 
     case "Low":
-      return "bg-green-500/20 text-green-400 border border-green-500/30";
+      return "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400";
 
     default:
-      return "bg-zinc-700 text-zinc-300";
+      return "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300";
   }
 }
 
 function statusColor(status: string) {
   switch (status) {
     case "Open":
-      return "bg-blue-500/20 text-blue-400";
+      return "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400";
 
     case "Assigned":
-      return "bg-yellow-500/20 text-yellow-400";
+      return "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400";
 
     case "Resolved":
-      return "bg-green-500/20 text-green-400";
+      return "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400";
 
     default:
-      return "bg-zinc-700 text-zinc-300";
+      return "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300";
   }
 }
 
@@ -56,30 +58,63 @@ function getRelativeTime(date: string) {
 export default function RecentTickets({
   tickets,
 }: RecentTicketsProps) {
+
+  const navigate = useNavigate();
+
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-900 shadow-lg">
+    <div
+      className="
+        rounded-2xl
+        border
+        border-slate-200
+        bg-white
+        shadow-sm
+        transition-colors
+        duration-300
+
+        dark:border-slate-800
+        dark:bg-slate-900
+      "
+    >
 
       {/* Header */}
 
-      <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-5">
+      <div
+        className="
+          flex
+          items-center
+          justify-between
+          border-b
+          border-slate-200
+          px-6
+          py-5
 
-        <h2 className="text-xl font-semibold text-white">
+          dark:border-slate-800
+        "
+      >
+
+        <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
           Recent Tickets
         </h2>
 
-        <button className="flex items-center gap-2 text-sm font-medium text-blue-400 transition hover:text-blue-300">
+        <button
+          onClick={() => navigate("/tickets")}
+          className="flex items-center gap-2 text-sm font-semibold text-blue-600 transition hover:text-blue-700 dark:text-blue-400"
+        >
           View All
           <ArrowRight size={18} />
         </button>
 
       </div>
 
-      {/* Empty State */}
+      {/* Empty */}
 
       {tickets.length === 0 ? (
-        <div className="flex h-60 items-center justify-center text-zinc-500">
+
+        <div className="flex h-60 items-center justify-center text-slate-500 dark:text-slate-400">
           No recent tickets found.
         </div>
+
       ) : (
 
         <div>
@@ -88,14 +123,28 @@ export default function RecentTickets({
 
             <div
               key={ticket.id}
-              className="cursor-pointer border-b border-zinc-800 p-5 transition hover:bg-zinc-800/40 last:border-none"
+              className="
+                cursor-pointer
+                border-b
+                border-slate-200
+                p-5
+                transition-all
+                duration-200
+
+                hover:bg-slate-50
+
+                dark:border-slate-800
+                dark:hover:bg-slate-800/40
+
+                last:border-none
+              "
             >
 
-              {/* First Row */}
+              {/* Top */}
 
               <div className="mb-3 flex items-center justify-between">
 
-                <h3 className="font-semibold text-white">
+                <h3 className="font-semibold text-slate-900 dark:text-white">
                   #{ticket.id} • {ticket.title}
                 </h3>
 
@@ -107,9 +156,9 @@ export default function RecentTickets({
 
               </div>
 
-              {/* Second Row */}
+              {/* Priority */}
 
-              <div className="mb-3 flex items-center gap-3">
+              <div className="mb-4">
 
                 <span
                   className={`rounded-full px-3 py-1 text-xs font-semibold ${priorityColor(ticket.priority)}`}
@@ -119,15 +168,17 @@ export default function RecentTickets({
 
               </div>
 
-              {/* Third Row */}
+              {/* Footer */}
 
-              <div className="flex items-center justify-between text-sm text-zinc-400">
+              <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
 
                 <div className="flex items-center gap-2">
 
                   <User size={16} />
 
-                  <span>{ticket.assigned_to}</span>
+                  <span>
+                    {ticket.assigned_to || "Unassigned"}
+                  </span>
 
                 </div>
 

@@ -25,16 +25,31 @@ export default function PriorityChart({
   data,
 }: PriorityChartProps) {
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+    <div
+      className="
+        rounded-2xl
+        border
+        border-slate-200
+        bg-white
+        p-6
+        shadow-sm
+        transition-all
+        duration-300
 
-      <h2 className="mb-6 text-xl font-semibold text-white">
+        dark:border-slate-800
+        dark:bg-slate-900
+      "
+    >
+      <h2 className="mb-6 text-xl font-semibold text-slate-900 dark:text-white">
         Priority Breakdown
       </h2>
 
       <div className="h-80">
 
-        <ResponsiveContainer width="100%" height="100%">
-
+        <ResponsiveContainer
+          width="100%"
+          height="100%"
+        >
           <PieChart>
 
             <Pie
@@ -50,14 +65,20 @@ export default function PriorityChart({
 
                 <Cell
                   key={index}
-                  fill={COLORS[index % COLORS.length]}
+                  fill={COLORS[index]}
                 />
 
               ))}
 
             </Pie>
 
-            <Tooltip />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "#ffffff",
+                borderRadius: "12px",
+                border: "1px solid #e2e8f0",
+              }}
+            />
 
           </PieChart>
 
@@ -65,7 +86,7 @@ export default function PriorityChart({
 
       </div>
 
-      <div className="mt-4 flex justify-around">
+      <div className="mt-6 flex justify-around">
 
         {data.map((item, index) => (
 
@@ -77,15 +98,16 @@ export default function PriorityChart({
             <div
               className="h-3 w-3 rounded-full"
               style={{
-                backgroundColor: COLORS[index % COLORS.length],
+                backgroundColor:
+                  COLORS[index],
               }}
             />
 
-            <span className="text-zinc-300">
+            <span className="text-slate-600 dark:text-slate-300">
               {item.name}
             </span>
 
-            <span className="font-bold text-white">
+            <span className="font-bold text-slate-900 dark:text-white">
               {item.value}
             </span>
 

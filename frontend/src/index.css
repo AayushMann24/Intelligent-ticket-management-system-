@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Tell Tailwind that the "dark" variant is controlled by the .dark class */
+@custom-variant dark (&:where(.dark, .dark *));
+
 html,
 body,
 #root {
@@ -10,9 +13,10 @@ body,
 }
 
 body {
-  background-color: #020617; /* slate-950 */
-  color: white;
   font-family: Inter, system-ui, sans-serif;
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
 }
 
 * {

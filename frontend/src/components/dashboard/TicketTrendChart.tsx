@@ -8,7 +8,9 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+import { useTheme } from "../../context/ThemeContext";
 import type { TicketTrend } from "../../services/dashboardService";
+
 interface TicketTrendChartProps {
   data: TicketTrend[];
 }
@@ -17,26 +19,61 @@ export default function TicketTrendChart({
   data,
 }: TicketTrendChartProps) {
 
+  const { theme } = useTheme();
+
+  const dark = theme === "dark";
+
   if (!data || data.length === 0) {
     return (
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-        <h2 className="mb-6 text-xl font-semibold text-white">
+      <div
+        className="
+          rounded-2xl
+          border
+          border-slate-200
+          bg-white
+          p-6
+          shadow-sm
+          transition-all
+          duration-300
+
+          dark:border-slate-800
+          dark:bg-slate-900
+        "
+      >
+        <h2 className="mb-6 text-xl font-semibold text-slate-900 dark:text-white">
           Ticket Trend
         </h2>
 
         <div className="flex h-80 items-center justify-center">
-          <p className="text-zinc-400">
+
+          <p className="text-slate-500 dark:text-slate-400">
             No ticket trend data available.
           </p>
+
         </div>
+
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+    <div
+      className="
+        rounded-2xl
+        border
+        border-slate-200
+        bg-white
+        p-6
+        shadow-sm
+        transition-all
+        duration-300
 
-      <h2 className="mb-6 text-xl font-semibold text-white">
+        dark:border-slate-800
+        dark:bg-slate-900
+      "
+    >
+
+      <h2 className="mb-6 text-xl font-semibold text-slate-900 dark:text-white">
         Ticket Trend
       </h2>
 
@@ -56,26 +93,32 @@ export default function TicketTrendChart({
 
             <CartesianGrid
               strokeDasharray="3 3"
-              stroke="#3f3f46"
+              stroke={dark ? "#334155" : "#e2e8f0"}
             />
 
             <XAxis
               dataKey="date"
-              stroke="#a1a1aa"
-              tick={{ fill: "#a1a1aa" }}
+              stroke={dark ? "#94a3b8" : "#64748b"}
+              tick={{
+                fill: dark ? "#94a3b8" : "#64748b",
+              }}
             />
 
             <YAxis
-              stroke="#a1a1aa"
-              tick={{ fill: "#a1a1aa" }}
+              stroke={dark ? "#94a3b8" : "#64748b"}
+              tick={{
+                fill: dark ? "#94a3b8" : "#64748b",
+              }}
             />
 
             <Tooltip
               contentStyle={{
-                backgroundColor: "#18181b",
-                border: "1px solid #3f3f46",
+                backgroundColor: dark ? "#0f172a" : "#ffffff",
+                border: dark
+                  ? "1px solid #334155"
+                  : "1px solid #e2e8f0",
                 borderRadius: "12px",
-                color: "#fff",
+                color: dark ? "#ffffff" : "#0f172a",
               }}
             />
 

@@ -1,14 +1,4 @@
-import axios from "axios";
-
-const API = "http://127.0.0.1:8000";
-
-const getToken = () => localStorage.getItem("token");
-
-const authHeaders = () => ({
-  headers: {
-    Authorization: `Bearer ${getToken()}`,
-  },
-});
+import api from "./api";
 
 // ======================================
 // Dashboard Summary
@@ -49,7 +39,6 @@ export interface TicketTrend {
 
 // ======================================
 // Activity
-// (Matches your backend response)
 // ======================================
 
 export interface Activity {
@@ -62,36 +51,32 @@ export interface Activity {
 // ======================================
 
 export async function getDashboardSummary(): Promise<DashboardSummary> {
-  const response = await axios.get<DashboardSummary>(
-    `${API}/dashboard/summary`,
-    authHeaders()
+  const response = await api.get<DashboardSummary>(
+    "/dashboard/summary"
   );
 
   return response.data;
 }
 
 export async function getRecentTickets(): Promise<RecentTicket[]> {
-  const response = await axios.get<RecentTicket[]>(
-    `${API}/dashboard/recent-tickets`,
-    authHeaders()
+  const response = await api.get<RecentTicket[]>(
+    "/dashboard/recent-tickets"
   );
 
   return response.data;
 }
 
 export async function getTicketTrend(): Promise<TicketTrend[]> {
-  const response = await axios.get<TicketTrend[]>(
-    `${API}/dashboard/trend`,
-    authHeaders()
+  const response = await api.get<TicketTrend[]>(
+    "/dashboard/trend"
   );
 
   return response.data;
 }
 
 export async function getRecentActivity(): Promise<Activity[]> {
-  const response = await axios.get<Activity[]>(
-    `${API}/dashboard/activity`,
-    authHeaders()
+  const response = await api.get<Activity[]>(
+    "/dashboard/activity"
   );
 
   return response.data;

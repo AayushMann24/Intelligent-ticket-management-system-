@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { X, FileText, AlertCircle } from "lucide-react";
 
 import type { Ticket } from "../../types/ticket";
 
@@ -66,65 +67,142 @@ export default function TicketFormModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
 
-      <div className="w-full max-w-xl rounded-xl bg-zinc-900 p-6">
+      <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-2xl transition-all duration-300 dark:border-slate-800 dark:bg-slate-900">
 
-        <h2 className="mb-6 text-2xl font-bold text-white">
-          {ticket ? "Edit Ticket" : "Create Ticket"}
-        </h2>
+        {/* Header */}
 
-        <div className="space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-200 px-8 py-6 dark:border-slate-800">
 
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Ticket Title"
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-3 text-white"
-          />
+          <div>
 
-          <textarea
-            rows={5}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Describe your issue..."
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-3 text-white"
-          />
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
+              {ticket ? "Edit Ticket" : "Create Ticket"}
+            </h2>
 
-          <select
-            value={priority}
-            onChange={(e) => setPriority(e.target.value)}
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-3 text-white"
-          >
-            <option value="High">High</option>
-            <option value="Medium">Medium</option>
-            <option value="Low">Low</option>
-          </select>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              {ticket
+                ? "Update the ticket details."
+                : "Create a new support ticket."}
+            </p>
 
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-3 text-white"
-          >
-            <option value="Open">Open</option>
-            <option value="Assigned">Assigned</option>
-            <option value="Resolved">Resolved</option>
-          </select>
-
-        </div>
-
-        <div className="mt-8 flex justify-end gap-3">
+          </div>
 
           <button
             onClick={onClose}
-            className="rounded-lg bg-zinc-700 px-5 py-2 text-white hover:bg-zinc-600"
+            className="rounded-lg p-2 transition hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            <X className="text-slate-600 dark:text-white" />
+          </button>
+
+        </div>
+
+        {/* Body */}
+
+        <div className="space-y-6 p-8">
+
+          {/* Title */}
+
+          <div>
+
+            <label className="mb-2 flex items-center gap-2 font-medium text-slate-700 dark:text-slate-300">
+
+              <FileText size={18} />
+
+              Ticket Title
+
+            </label>
+
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter ticket title..."
+              className="w-full rounded-xl border border-slate-300 bg-slate-50 p-3 text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:ring-blue-500/20"
+            />
+
+          </div>
+
+          {/* Description */}
+
+          <div>
+
+            <label className="mb-2 flex items-center gap-2 font-medium text-slate-700 dark:text-slate-300">
+
+              <AlertCircle size={18} />
+
+              Description
+
+            </label>
+
+            <textarea
+              rows={6}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Describe your issue in detail..."
+              className="w-full rounded-xl border border-slate-300 bg-slate-50 p-3 text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:ring-blue-500/20"
+            />
+
+          </div>
+
+          {/* Priority & Status */}
+
+          <div className="grid gap-5 md:grid-cols-2">
+
+            <div>
+
+              <label className="mb-2 block font-medium text-slate-700 dark:text-slate-300">
+                Priority
+              </label>
+
+              <select
+                value={priority}
+                onChange={(e) => setPriority(e.target.value)}
+                className="w-full rounded-xl border border-slate-300 bg-slate-50 p-3 text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:ring-blue-500/20"
+              >
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+              </select>
+
+            </div>
+
+            <div>
+
+              <label className="mb-2 block font-medium text-slate-700 dark:text-slate-300">
+                Status
+              </label>
+
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="w-full rounded-xl border border-slate-300 bg-slate-50 p-3 text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:ring-blue-500/20"
+              >
+                <option value="Open">Open</option>
+                <option value="Assigned">Assigned</option>
+                <option value="Resolved">Resolved</option>
+              </select>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* Footer */}
+
+        <div className="flex justify-end gap-4 border-t border-slate-200 px-8 py-6 dark:border-slate-800">
+
+          <button
+            onClick={onClose}
+            className="rounded-xl border border-slate-300 bg-white px-6 py-2.5 font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
           >
             Cancel
           </button>
 
           <button
             onClick={handleSave}
-            className="rounded-lg bg-blue-600 px-5 py-2 text-white hover:bg-blue-700"
+            className="rounded-xl bg-blue-600 px-6 py-2.5 font-semibold text-white transition-all hover:bg-blue-700 hover:shadow-lg"
           >
             {ticket ? "Update Ticket" : "Create Ticket"}
           </button>
