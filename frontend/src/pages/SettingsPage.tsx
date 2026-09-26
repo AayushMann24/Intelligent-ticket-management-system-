@@ -1,8 +1,17 @@
 import MainLayout from "../layouts/MainLayout";
 import { useTheme } from "../context/ThemeContext";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export default function SettingsPage() {
   const { theme, toggleTheme } = useTheme();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
 
   return (
     <MainLayout>
@@ -140,10 +149,7 @@ export default function SettingsPage() {
           </p>
 
           <button
-            onClick={() => {
-              localStorage.removeItem("token");
-              window.location.href = "/";
-            }}
+            onClick={handleLogout}
             className="mt-6 rounded-lg bg-red-600 px-6 py-2 text-white transition hover:bg-red-700"
           >
             Logout

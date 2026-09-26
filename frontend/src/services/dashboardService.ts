@@ -1,50 +1,18 @@
 import api from "./api";
+import type {
+  DashboardSummary,
+  RecentTicket,
+  TicketTrend,
+  Activity,
+} from "../types/dashboard";
 
-// ======================================
-// Dashboard Summary
-// ======================================
-
-export interface DashboardSummary {
-  total_tickets: number;
-  open_tickets: number;
-  assigned_tickets: number;
-  resolved_tickets: number;
-
-  high_priority: number;
-  medium_priority: number;
-  low_priority: number;
-}
-
-// ======================================
-// Recent Tickets
-// ======================================
-
-export interface RecentTicket {
-  id: number;
-  title: string;
-  status: string;
-  priority: string;
-  assigned_to: string;
-  created_at: string;
-}
-
-// ======================================
-// Ticket Trend
-// ======================================
-
-export interface TicketTrend {
-  date: string;
-  tickets: number;
-}
-
-// ======================================
-// Activity
-// ======================================
-
-export interface Activity {
-  message: string;
-  time: string;
-}
+// Re-export types for consumers
+export type {
+  DashboardSummary,
+  RecentTicket,
+  TicketTrend,
+  Activity,
+};
 
 // ======================================
 // API Calls

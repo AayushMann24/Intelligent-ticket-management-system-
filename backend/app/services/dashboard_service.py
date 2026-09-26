@@ -5,6 +5,15 @@ from app.models.ticket import Ticket
 
 
 # ======================================================
+# Base query with soft delete filter
+# ======================================================
+
+def _base_ticket_query(db: Session):
+    """Base query that excludes soft-deleted tickets."""
+    return db.query(Ticket).filter(Ticket.is_deleted == False)
+
+
+# ======================================================
 # Helper
 # ======================================================
 
@@ -12,15 +21,15 @@ def _ticket_query(db: Session, user):
     role = user["role"]
 
     if role == "Admin":
-        return db.query(Ticket)
+        return _base_ticket_query(db)
 
     if role == "Technician":
-        return db.query(Ticket).filter(
+        return _base_ticket_query(db).filter(
             Ticket.assigned_to == user["id"]
         )
 
     # Employee
-    return db.query(Ticket).filter(
+    return _base_ticket_query(db).filter(
         Ticket.created_by == user["id"]
     )
 

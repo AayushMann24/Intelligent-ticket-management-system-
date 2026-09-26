@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { X, FileText, AlertCircle } from "lucide-react";
 
-import type { Ticket } from "../../types/ticket";
+import type { Ticket, TicketType } from "../../types/ticket";
 
 interface TicketFormModalProps {
   open: boolean;
@@ -14,6 +14,7 @@ interface TicketFormModalProps {
     description: string;
     priority: string;
     status: string;
+    ticket_type: TicketType;
     assigned_to: number | null;
   }) => Promise<void>;
 }
@@ -29,6 +30,7 @@ export default function TicketFormModal({
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("Medium");
   const [status, setStatus] = useState("Open");
+  const [ticketType, setTicketType] = useState<TicketType>("INCIDENT");
 
   useEffect(() => {
     if (ticket) {
@@ -36,11 +38,13 @@ export default function TicketFormModal({
       setDescription(ticket.description);
       setPriority(ticket.priority);
       setStatus(ticket.status);
+      setTicketType(ticket.ticket_type);
     } else {
       setTitle("");
       setDescription("");
       setPriority("Medium");
       setStatus("Open");
+      setTicketType("INCIDENT");
     }
   }, [ticket]);
 
@@ -62,6 +66,7 @@ export default function TicketFormModal({
       description,
       priority,
       status,
+      ticket_type: ticketType,
       assigned_to: null,
     });
   };
@@ -145,9 +150,26 @@ export default function TicketFormModal({
 
           </div>
 
-          {/* Priority & Status */}
+          {/* Ticket Type, Priority & Status */}
 
-          <div className="grid gap-5 md:grid-cols-2">
+          <div className="grid gap-5 md:grid-cols-3">
+
+            <div>
+
+              <label className="mb-2 block font-medium text-slate-700 dark:text-slate-300">
+                Type
+              </label>
+
+              <select
+                value={ticketType}
+                onChange={(e) => setTicketType(e.target.value as TicketType)}
+                className="w-full rounded-xl border border-slate-300 bg-slate-50 p-3 text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:ring-blue-500/20"
+              >
+                <option value="INCIDENT">Incident</option>
+                <option value="SERVICE_REQUEST">Service Request</option>
+              </select>
+
+            </div>
 
             <div>
 
@@ -163,6 +185,7 @@ export default function TicketFormModal({
                 <option value="High">High</option>
                 <option value="Medium">Medium</option>
                 <option value="Low">Low</option>
+                <option value="Critical">Critical</option>
               </select>
 
             </div>
@@ -180,7 +203,10 @@ export default function TicketFormModal({
               >
                 <option value="Open">Open</option>
                 <option value="Assigned">Assigned</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Pending">Pending</option>
                 <option value="Resolved">Resolved</option>
+                <option value="Closed">Closed</option>
               </select>
 
             </div>

@@ -259,6 +259,55 @@ export default function TicketDetailsModal({
 
           </Section>
 
+          {/* SLA Information (Phase 2C) */}
+          {(ticket.sla_policy_id || ticket.sla_response_deadline || ticket.sla_resolution_deadline) && (
+            <Section title="SLA" icon={<Calendar size={20} />}>
+              {ticket.sla_policy_id && (
+                <BadgeInfo
+                  label="SLA Policy"
+                  value={`Policy #${ticket.sla_policy_id}`}
+                  className="bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400"
+                />
+              )}
+              {ticket.sla_response_deadline && (
+                <Info
+                  label="Response Deadline"
+                  value={new Date(ticket.sla_response_deadline).toLocaleString()}
+                />
+              )}
+              {ticket.sla_resolution_deadline && (
+                <Info
+                  label="Resolution Deadline"
+                  value={new Date(ticket.sla_resolution_deadline).toLocaleString()}
+                />
+              )}
+              {ticket.sla_response_status && (
+                <Info
+                  label="Response Status"
+                  value={ticket.sla_response_status}
+                />
+              )}
+              {ticket.sla_resolution_status && (
+                <Info
+                  label="Resolution Status"
+                  value={ticket.sla_resolution_status}
+                />
+              )}
+              {ticket.sla_response_breached && (
+                <Info
+                  label="Response Breached"
+                  value="Yes"
+                />
+              )}
+              {ticket.sla_resolution_breached && (
+                <Info
+                  label="Resolution Breached"
+                  value="Yes"
+                />
+              )}
+            </Section>
+          )}
+
         </div>
 
       </div>

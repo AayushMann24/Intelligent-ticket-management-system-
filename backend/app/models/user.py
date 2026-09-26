@@ -1,6 +1,6 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, Boolean
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.database.connection import Base
 
@@ -29,8 +29,23 @@ class User(Base):
     )
 
     created_at = Column(
-        DateTime,
-        default=datetime.utcnow
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    is_deleted = Column(
+        Boolean,
+        default=False,
+        nullable=False,
+        index=True,
     )
 
     # Tickets created by this user
@@ -45,4 +60,46 @@ class User(Base):
         "Ticket",
         foreign_keys="Ticket.assigned_to",
         back_populates="assignee"
+    )
+
+    # Comments authored by this user
+    ticket_comments = relationship(
+        "TicketComment",
+        foreign_keys="TicketComment.author_id",
+        back_populates="author",
+    )
+
+    # History events performed by this user
+    ticket_history = relationship(
+        "TicketHistory",
+        foreign_keys="TicketHistory.actor_id",
+        back_populates="actor",
+    )
+
+    # Attachments uploaded by this user
+    ticket_attachments = relationship(
+        "TicketAttachment",
+        foreign_keys="TicketAttachment.uploaded_by",
+        back_populates="uploader",
+    )
+
+    # Tickets resolved by this user (Phase 2B)
+    resolved_tickets = relationship(
+        "Ticket",
+        foreign_keys="Ticket.resolved_by",
+        back_populates="resolver",
+    )
+
+    # Tickets escalated by this user (Phase 2B)
+    escalated_tickets = relationship(
+        "Ticket",
+        foreign_keys="Ticket.escalated_by",
+        back_populates="escalator",
+    )
+
+    # Tickets escalated to this user (Phase 2B)
+    escalation_received_tickets = relationship(
+        "Ticket",
+        foreign_keys="Ticket.escalated_to",
+        back_populates="escalation_target",
     )

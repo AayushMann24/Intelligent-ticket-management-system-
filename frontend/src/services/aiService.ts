@@ -1,7 +1,4 @@
 import api from "./api";
-const API = api.create({
-    baseURL: "http://127.0.0.1:8000",
-});
 
 export interface AIResponse {
     response: string;
@@ -10,13 +7,11 @@ export interface AIResponse {
 export async function sendMessage(
     message: string
 ): Promise<AIResponse> {
-
-    const res = await API.post<AIResponse>(
+    const res = await api.post<AIResponse>(
         "/assistant/chat",
         {
             message,
         }
     );
-
     return res.data;
 }

@@ -5,6 +5,7 @@ from app.models.ticket import Ticket
 def get_recent_activity(db: Session):
     tickets = (
         db.query(Ticket)
+        .filter(Ticket.is_deleted == False)
         .order_by(Ticket.created_at.desc())
         .limit(10)
         .all()

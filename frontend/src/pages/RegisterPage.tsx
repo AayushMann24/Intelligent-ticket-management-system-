@@ -12,10 +12,11 @@ import {
   Briefcase,
 } from "lucide-react";
 
-import { registerUser } from "../services/authService";
+import { useAuth } from "../context/AuthContext";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const { register } = useAuth();
 
   const [form, setForm] = useState({
     name: "",
@@ -54,7 +55,7 @@ export default function RegisterPage() {
 
     try {
 
-      await registerUser(form);
+      await register(form);
 
       alert("Registration Successful!");
 

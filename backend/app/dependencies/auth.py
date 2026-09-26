@@ -1,13 +1,8 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
-from dotenv import load_dotenv
-import os
 
-load_dotenv()
-
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
+from app.utils.jwt import decode_token
 
 security = HTTPBearer()
 
@@ -17,30 +12,17 @@ def verify_token(
 ):
     token = credentials.credentials
 
-    print("\n======================================")
-    print("TOKEN RECEIVED")
-    print(token)
-    print("======================================")
-
     try:
-
-        payload = jwt.decode(
-            token,
-            SECRET_KEY,
-            algorithms=[ALGORITHM],
-        )
-
-        print("\nPAYLOAD DECODED SUCCESSFULLY")
-        print(payload)
-        print()
+        payload = decode_token(token)
 
         user_id = payload.get("sub")
         role = payload.get("role")
         email = payload.get("email")
+        token_type = payload.get("type")
 
-        if user_id is None:
+        if user_id is None or token_type == "refresh":
             raise HTTPException(
-                status_code=401,
+                status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token",
             )
 
@@ -50,14 +32,8 @@ def verify_token(
             "email": email,
         }
 
-    except JWTError as e:
-
-        print("\nJWT ERROR")
-        print(type(e).__name__)
-        print(str(e))
-        print()
-
+    except JWTError:
         raise HTTPException(
-            status_code=401,
-            detail=str(e),
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
         )

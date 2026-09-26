@@ -10,13 +10,13 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 
-import useProfile from "../../hooks/useProfile";
+import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 
 export default function Navbar() {
   const navigate = useNavigate();
 
-  const { user } = useProfile();
+  const { user, logout } = useAuth();
 
   const { theme, toggleTheme } = useTheme();
 
@@ -30,7 +30,7 @@ export default function Navbar() {
   // =====================================
 
   const handleLogout = () => {
-    localStorage.clear();
+    logout();
     navigate("/");
   };
 

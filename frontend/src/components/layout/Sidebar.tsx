@@ -17,14 +17,17 @@ import {
   useNavigate,
 } from "react-router-dom";
 
+import { useAuth } from "../../context/AuthContext";
+
 export default function Sidebar() {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   const [collapsed, setCollapsed] =
     useState(false);
 
   const role =
-    localStorage.getItem("role");
+    user?.role;
 
   const menuItems = [
     {
@@ -67,7 +70,7 @@ export default function Sidebar() {
   ];
 
   const handleLogout = () => {
-    localStorage.clear();
+    logout();
     navigate("/");
   };
 

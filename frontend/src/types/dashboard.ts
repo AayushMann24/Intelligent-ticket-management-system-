@@ -8,3 +8,22 @@ export interface DashboardSummary {
   medium_priority: number;
   low_priority: number;
 }
+
+export interface RecentTicket {
+  id: number;
+  title: string;
+  status: string;
+  priority: string;
+  assigned_to: string;
+  created_at: string;
+}
+
+export interface TicketTrend {
+  date: string;
+  tickets: number;
+}
+
+export interface Activity {
+  message: string;
+  time: string;
+}

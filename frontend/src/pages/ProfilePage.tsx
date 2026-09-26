@@ -1,7 +1,10 @@
 import MainLayout from "../layouts/MainLayout";
 import { User, Mail, Shield } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 export default function ProfilePage() {
+  const { user } = useAuth();
+
   return (
     <MainLayout>
       <div className="mx-auto max-w-4xl">
@@ -15,16 +18,16 @@ export default function ProfilePage() {
           <div className="flex items-center gap-6">
 
             <div className="flex h-24 w-24 items-center justify-center rounded-full bg-cyan-500 text-4xl font-bold text-white">
-              A
+              {user?.name?.charAt(0).toUpperCase() ?? "U"}
             </div>
 
             <div>
               <h2 className="text-3xl font-bold text-white">
-                Administrator
+                {user?.name ?? "User"}
               </h2>
 
               <p className="text-slate-400">
-                admin@gmail.com
+                {user?.email ?? ""}
               </p>
             </div>
 
@@ -40,7 +43,7 @@ export default function ProfilePage() {
                 </p>
 
                 <p className="text-white">
-                  Admin
+                  {user?.name ?? ""}
                 </p>
               </div>
             </div>
@@ -53,7 +56,7 @@ export default function ProfilePage() {
                 </p>
 
                 <p className="text-white">
-                  admin@gmail.com
+                  {user?.email ?? ""}
                 </p>
               </div>
             </div>
@@ -66,7 +69,7 @@ export default function ProfilePage() {
                 </p>
 
                 <p className="text-white">
-                  Administrator
+                  {user?.role ?? ""}
                 </p>
               </div>
             </div>

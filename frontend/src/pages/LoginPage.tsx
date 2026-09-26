@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 
 import {
   Eye,
@@ -10,10 +10,12 @@ import {
   ArrowLeft,
 } from "lucide-react";
 
-import { loginUser } from "../services/authService";
+import { useAuth } from "../context/AuthContext";
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,6 +26,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const from = (location.state as { from?: Location })?.from?.pathname || "/dashboard";
+
   const handleLogin = async (
     e: React.FormEvent
   ) => {
@@ -33,37 +37,12 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const response = await loginUser({
+      await login({
         email,
         password,
       });
 
-      localStorage.setItem(
-        "token",
-        response.access_token
-    );
-
-        localStorage.setItem(
-        "role",
-        response.role
-      );
-
-        localStorage.setItem(
-        "name",
-        response.name
-      );
-
-localStorage.setItem(
-  "email",
-  response.email
-);
-
-localStorage.setItem(
-  "userId",
-  response.id.toString()
-);
-
-      navigate("/dashboard");
+      navigate(from, { replace: true });
 
     } catch {
       setError("Invalid email or password.");
