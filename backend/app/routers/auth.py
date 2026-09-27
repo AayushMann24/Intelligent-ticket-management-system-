@@ -6,6 +6,7 @@ from app.models.user import User
 from app.schemas.user import UserCreate, UserLogin, UserResponse, Token, RefreshTokenRequest
 from app.services.auth_service import register_user, login_user, refresh_access_token, logout_user
 from app.dependencies.auth import verify_token
+from app.dependencies.rate_limit import auth_rate_limit_dependency
 
 router = APIRouter(
     prefix="/auth",
@@ -17,6 +18,7 @@ router = APIRouter(
     "/register",
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(auth_rate_limit_dependency)],
 )
 def create_user(
     user: UserCreate,
@@ -35,6 +37,7 @@ def create_user(
     "/login",
     response_model=Token,
     status_code=status.HTTP_200_OK,
+    dependencies=[Depends(auth_rate_limit_dependency)],
 )
 def login(
     user: UserLogin,
@@ -53,6 +56,7 @@ def login(
     "/refresh",
     response_model=Token,
     status_code=status.HTTP_200_OK,
+    dependencies=[Depends(auth_rate_limit_dependency)],
 )
 def refresh_token(
     request: RefreshTokenRequest,

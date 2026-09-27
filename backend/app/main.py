@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database.connection import engine
@@ -39,6 +39,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def add_rate_limit_headers(request: Request, call_next):
+    """Add rate limit headers to responses."""
+    response = await call_next(request)
+    
+    # Add rate limit headers if they were set by the rate limit dependency
+    if hasattr(request.state, "rate_limit_remaining"):
+        response.headers["X-RateLimit-Remaining"] = str(request.state.rate_limit_remaining)
+    if hasattr(request.state, "rate_limit_retry_after") and request.state.rate_limit_retry_after > 0:
+        response.headers["Retry-After"] = str(request.state.rate_limit_retry_after)
+    
+    return response
+
 
 app.include_router(auth.router)
 app.include_router(ticket.router)

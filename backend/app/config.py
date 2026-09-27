@@ -27,6 +27,14 @@ class Settings(BaseSettings):
     sla_monitor_enabled: bool = Field(default=True, description="Enable SLA background monitor")
     sla_check_interval_seconds: int = Field(default=60, description="SLA check interval in seconds")
 
+    # Rate Limiting (Phase 2C-3A)
+    rate_limit_enabled: bool = Field(default=True, description="Enable API rate limiting")
+    rate_limit_requests: int = Field(default=10, description="Maximum requests per window")
+    rate_limit_window_seconds: int = Field(default=60, description="Rate limit window in seconds")
+    # Stricter limits for authentication endpoints
+    auth_rate_limit_requests: int = Field(default=5, description="Maximum auth requests per window")
+    auth_rate_limit_window_seconds: int = Field(default=300, description="Auth rate limit window in seconds (5 minutes)")
+
     # Environment
     environment: str = Field(default="development", description="Environment name")
     debug: bool = Field(default=False, description="Debug mode")

@@ -8,6 +8,7 @@ from app.database.connection import get_db
 from app.main import app
 from app.config import settings
 from app.utils.security import hash_password
+from app.utils.rate_limiter import rate_limiter
 
 from fastapi.testclient import TestClient
 
@@ -36,6 +37,23 @@ def override_get_db():
             yield db
         finally:
             db.close()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def disable_rate_limiting():
+    """Disable rate limiting for all tests."""
+    original_enabled = settings.rate_limit_enabled
+    settings.rate_limit_enabled = False
+    yield
+    settings.rate_limit_enabled = original_enabled
+
+
+@pytest.fixture(scope="function", autouse=True)
+def reset_rate_limiter():
+    """Reset rate limiter between tests."""
+    yield
+    import asyncio
+    asyncio.run(rate_limiter.reset_all())
 
 
 @pytest.fixture(scope="function")

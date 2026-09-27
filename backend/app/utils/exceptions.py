@@ -51,3 +51,13 @@ class ConflictError(ITMSException):
 
     def __init__(self, message: str = "Resource conflict", details: Optional[Dict[str, Any]] = None):
         super().__init__(message, code="CONFLICT", status_code=409, details=details)
+
+
+class RateLimitExceededError(ITMSException):
+    """Rate limit exceeded."""
+
+    def __init__(self, message: str = "Rate limit exceeded", retry_after: int = 60, details: Optional[Dict[str, Any]] = None):
+        if details is None:
+            details = {}
+        details["retry_after"] = retry_after
+        super().__init__(message, code="RATE_LIMIT_EXCEEDED", status_code=429, details=details)

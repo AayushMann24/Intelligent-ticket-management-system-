@@ -9,11 +9,27 @@ from app.utils.exceptions import (
     NotFoundError,
     AuthorizationError,
     ValidationError as ITMSValidationError,
+    RateLimitExceededError,
 )
 
 
 def register_exception_handlers(app: FastAPI) -> None:
     """Register global exception handlers."""
+
+    @app.exception_handler(RateLimitExceededError)
+    async def rate_limit_handler(request: Request, exc: RateLimitExceededError):
+        retry_after = exc.details.get("retry_after", 60) if exc.details else 60
+        return JSONResponse(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            content={
+                "error": {
+                    "code": exc.code,
+                    "message": exc.message,
+                    "details": exc.details,
+                }
+            },
+            headers={"Retry-After": str(retry_after)},
+        )
 
     @app.exception_handler(ITMSException)
     async def itms_exception_handler(request: Request, exc: ITMSException):
