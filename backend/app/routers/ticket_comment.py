@@ -21,6 +21,7 @@ from app.dependencies.roles import (
     require_technician,
     require_admin_or_technician,
 )
+from app.dependencies.csrf import csrf_protect
 
 router = APIRouter(
     tags=["Ticket Comments"],
@@ -31,6 +32,7 @@ router = APIRouter(
     "/{ticket_id}/comments",
     response_model=TicketCommentResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(csrf_protect)],
 )
 def create_ticket_comment(
     ticket_id: int,
@@ -91,6 +93,7 @@ def get_ticket_comment(
 @router.put(
     "/{ticket_id}/comments/{comment_id}",
     response_model=TicketCommentResponse,
+    dependencies=[Depends(csrf_protect)],
 )
 def update_ticket_comment(
     ticket_id: int,
@@ -111,6 +114,7 @@ def update_ticket_comment(
 @router.delete(
     "/{ticket_id}/comments/{comment_id}",
     status_code=status.HTTP_200_OK,
+    dependencies=[Depends(csrf_protect)],
 )
 def delete_ticket_comment(
     ticket_id: int,

@@ -1,0 +1,20 @@
+# Dockerignore for backend
+.env
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.venv
+venv
+ENV
+env
+bld
+bin
+.git
+.gitignore
+docker-compose.yml
+docker-compose.override.yml
+logs
+*.log
+uploads/

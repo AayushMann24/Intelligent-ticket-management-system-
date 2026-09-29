@@ -18,13 +18,13 @@ import TicketTrendChart from "../components/dashboard/TicketTrendChart";
 import ActivityFeed from "../components/dashboard/ActivityFeed";
 
 import useDashboard from "../hooks/useDashboard";
+import { useAuth } from "../context/AuthContext";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const role = localStorage.getItem("role");
-
-  const isAdmin = role === "Admin";
+  const isAdmin = user?.role === "Admin";
 
   const {
     summary,

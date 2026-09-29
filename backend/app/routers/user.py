@@ -7,6 +7,7 @@ from app.dependencies.roles import (
     require_admin,
     require_authenticated_user,
 )
+from app.dependencies.csrf import csrf_protect
 
 from app.schemas.user import (
     UserResponse,
@@ -114,7 +115,8 @@ def get_user(
 # ==================================================
 @router.put(
     "/{user_id}/role",
-    response_model=UserResponse
+    response_model=UserResponse,
+    dependencies=[Depends(csrf_protect)]
 )
 def change_user_role(
     user_id: int,

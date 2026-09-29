@@ -1,5 +1,7 @@
 import { Search, Plus } from "lucide-react";
 
+import { useAuth } from "../../context/AuthContext";
+
 interface TicketToolbarProps {
   search: string;
   setSearch: (value: string) => void;
@@ -22,7 +24,8 @@ export default function TicketToolbar({
   setPriority,
   onCreate,
 }: TicketToolbarProps) {
-  const role = localStorage.getItem("role");
+  const { user } = useAuth();
+  const role = user?.role;
 
   return (
     <div className="mb-8 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 dark:border-slate-800 dark:bg-slate-900 lg:flex-row lg:items-center lg:justify-between">

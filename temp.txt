@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: itms_postgres
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-itms}
+      POSTGRES_USER: ${POSTGRES_USER:-itms_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-itms_pass}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: itms_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - backend/.env
+    environment:
+      # Override DATABASE_URL to use the db service
+      DATABASE_URL: postgresql://${POSTGRES_USER:-itms_user}:${POSTGRES_PASSWORD:-itms_pass}@db:5432/${POSTGRES_DB:-itms}
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    container_name: itms_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    # No env_file needed for frontend unless we need to configure API URL
+    # We'll rely on the frontend being served and making requests to the backend via relative paths or environment variables
+    # For simplicity, we assume the frontend is served from the same origin and uses relative URLs to talk to backend
+    # If needed, we can add environment variables for VITE_API_URL
+
+volumes:
+  postgres_data:
+  uploads:

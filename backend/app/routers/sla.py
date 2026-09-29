@@ -25,6 +25,7 @@ from app.dependencies.roles import (
     require_admin,
     require_authenticated_user,
 )
+from app.dependencies.csrf import csrf_protect
 
 from app.models.ticket import Ticket
 from app.services.ticket_utils import _can_view_ticket
@@ -44,6 +45,7 @@ router = APIRouter(
     "/policies",
     response_model=SLAPolicyResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(csrf_protect)],
 )
 def create_sla_policy_endpoint(
     policy_data: SLAPolicyCreate,
@@ -127,6 +129,7 @@ def get_sla_policy_endpoint(
 @router.put(
     "/policies/{policy_id}",
     response_model=SLAPolicyResponse,
+    dependencies=[Depends(csrf_protect)],
 )
 def update_sla_policy_endpoint(
     policy_id: int,
@@ -157,6 +160,7 @@ def update_sla_policy_endpoint(
 @router.delete(
     "/policies/{policy_id}",
     response_model=dict,
+    dependencies=[Depends(csrf_protect)],
 )
 def delete_sla_policy_endpoint(
     policy_id: int,

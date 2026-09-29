@@ -24,7 +24,7 @@ class TestTicketCreation:
             "description": "This is a test ticket",
             "priority": "Medium",
         })
-        assert response.status_code == 403
+        assert response.status_code == 401
 
     def test_create_ticket_high_priority(self, client, auth_headers):
         response = client.post("/tickets/", json={

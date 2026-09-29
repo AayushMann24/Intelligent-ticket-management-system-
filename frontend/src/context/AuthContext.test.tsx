@@ -7,9 +7,13 @@ vi.mock('../services/authService', () => ({
   loginUser: vi.fn(),
   registerUser: vi.fn(),
   refreshAccessToken: vi.fn(),
+  logoutUser: vi.fn(),
 }));
 
-import { loginUser, registerUser, refreshAccessToken } from '../services/authService';
+import { loginUser, registerUser, refreshAccessToken, logoutUser } from '../services/authService';
+
+// Mock fetch
+global.fetch = vi.fn();
 
 // Test component that uses useAuth
 const TestComponent = () => {
@@ -28,15 +32,13 @@ const TestComponent = () => {
 describe('AuthContext', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    localStorage.clear();
     vi.resetModules();
+    (global.fetch as vi.Mock).mockReset();
   });
 
   it('renders without crashing', () => {
-    // Ensure no token in localStorage
-    localStorage.clear();
-    
     // Mock the fetch to fail so loading completes quickly
+    (global.fetch as vi.Mock).mockRejectedValueOnce(new Error('No token'));
     (refreshAccessToken as vi.Mock).mockRejectedValueOnce(new Error('No token'));
     
     render(
@@ -61,6 +63,7 @@ describe('AuthContext', () => {
     };
 
     (loginUser as vi.Mock).mockResolvedValueOnce(mockTokens);
+    (global.fetch as vi.Mock).mockRejectedValueOnce(new Error('No token'));
     (refreshAccessToken as vi.Mock).mockRejectedValueOnce(new Error('No token'));
 
     render(
@@ -81,13 +84,14 @@ describe('AuthContext', () => {
       expect(screen.getByTestId('user')).toHaveTextContent('test@example.com');
     });
 
-    expect(localStorage.setItem).toHaveBeenCalledWith('token', 'mock-access-token');
-    expect(localStorage.setItem).toHaveBeenCalledWith('refreshToken', 'mock-refresh-token');
+    // Verify loginUser was called
+    expect(loginUser).toHaveBeenCalledWith({ email: 'test@example.com', password: 'password123' });
   });
 
   it('handles login failure', async () => {
     // Mock login to reject but catch it in the component
     (loginUser as vi.Mock).mockRejectedValueOnce(new Error('Invalid credentials'));
+    (global.fetch as vi.Mock).mockRejectedValueOnce(new Error('No token'));
     (refreshAccessToken as vi.Mock).mockRejectedValueOnce(new Error('No token'));
 
     render(
@@ -122,14 +126,10 @@ describe('AuthContext', () => {
     });
   });
 
-  it('clears auth on logout', () => {
-    // Set initial auth state
-    localStorage.setItem('token', 'mock-token');
-    localStorage.setItem('refreshToken', 'mock-refresh-token');
-    localStorage.setItem('role', 'Employee');
-    localStorage.setItem('name', 'Test User');
-    localStorage.setItem('email', 'test@example.com');
-    localStorage.setItem('userId', '1');
+  it('clears auth on logout', async () => {
+    (logoutUser as vi.Mock).mockResolvedValueOnce({ message: 'Logged out successfully' });
+    (global.fetch as vi.Mock).mockRejectedValueOnce(new Error('No token'));
+    (refreshAccessToken as vi.Mock).mockRejectedValueOnce(new Error('No token'));
 
     render(
       <AuthProvider>
@@ -137,14 +137,17 @@ describe('AuthContext', () => {
       </AuthProvider>
     );
 
+    // Wait for initial loading
+    await waitFor(() => {
+      expect(screen.getByTestId('loading')).toHaveTextContent('false');
+    });
+
     // Click logout
     fireEvent.click(screen.getByTestId('logout-btn'));
 
-    expect(localStorage.removeItem).toHaveBeenCalledWith('token');
-    expect(localStorage.removeItem).toHaveBeenCalledWith('refreshToken');
-    expect(localStorage.removeItem).toHaveBeenCalledWith('role');
-    expect(localStorage.removeItem).toHaveBeenCalledWith('name');
-    expect(localStorage.removeItem).toHaveBeenCalledWith('email');
-    expect(localStorage.removeItem).toHaveBeenCalledWith('userId');
+    // Wait for logout to complete
+    await waitFor(() => {
+      expect(logoutUser).toHaveBeenCalled();
+    });
   });
 });

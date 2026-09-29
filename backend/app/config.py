@@ -35,9 +35,33 @@ class Settings(BaseSettings):
     auth_rate_limit_requests: int = Field(default=5, description="Maximum auth requests per window")
     auth_rate_limit_window_seconds: int = Field(default=300, description="Auth rate limit window in seconds (5 minutes)")
 
+    # Secure Cookie Authentication (Phase 2C-3A Checkpoint 2)
+    cookie_enabled: bool = Field(default=True, description="Enable cookie-based authentication")
+    cookie_secure: bool = Field(default=False, description="Secure flag for cookies (HTTPS only)")
+    cookie_samesite: str = Field(default="lax", description="SameSite policy: lax, strict, none")
+    cookie_domain: str = Field(default="", description="Cookie domain (empty for default)")
+    cookie_path: str = Field(default="/", description="Cookie path")
+    access_token_cookie_name: str = Field(default="access_token", description="Access token cookie name")
+    refresh_token_cookie_name: str = Field(default="refresh_token", description="Refresh token cookie name")
+
+    # CSRF Protection
+    csrf_enabled: bool = Field(default=True, description="Enable CSRF protection")
+    csrf_cookie_name: str = Field(default="csrf_token", description="CSRF token cookie name")
+    csrf_header_name: str = Field(default="X-CSRF-Token", description="CSRF token header name")
+
     # Environment
     environment: str = Field(default="development", description="Environment name")
     debug: bool = Field(default=False, description="Debug mode")
+
+    # Security Headers (Phase 2C-3A Checkpoint 3)
+    security_headers_enabled: bool = Field(default=True, description="Enable security headers middleware")
+    # Content Security Policy
+    csp_enabled: bool = Field(default=True, description="Enable Content Security Policy")
+    # HSTS - only for HTTPS/production
+    hsts_enabled: bool = Field(default=False, description="Enable HSTS (HTTPS only)")
+    hsts_max_age: int = Field(default=31536000, description="HSTS max-age in seconds (1 year)")
+    hsts_include_subdomains: bool = Field(default=False, description="HSTS includeSubDomains")
+    hsts_preload: bool = Field(default=False, description="HSTS preload")
 
     class Config:
         env_file = ".env"

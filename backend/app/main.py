@@ -18,9 +18,12 @@ from app.routers.dashboard import router as dashboard_router
 # from app.routers import assistant
 # from app.routers import ai
 from app.config import settings
+from sqlalchemy import text
+from app.database.connection import SessionLocal
 from app.utils.exception_handlers import register_exception_handlers
 from app.utils.logging_config import setup_logging
 from app.services.sla_scheduler import sla_scheduler_lifespan
+from app.utils.security_headers import SecurityHeadersMiddleware
 
 # Initialize structured logging
 setup_logging()
@@ -31,6 +34,10 @@ app = FastAPI(lifespan=sla_scheduler_lifespan)
 
 # Register global exception handlers
 register_exception_handlers(app)
+
+# Security Headers Middleware - added FIRST to wrap all responses including errors
+if settings.security_headers_enabled:
+    app.add_middleware(SecurityHeadersMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -86,5 +93,11 @@ def health_check():
 
 @app.get("/ready")
 def readiness_check():
-    # Add database connectivity check here if needed
-    return {"status": "ready"}
+    try:
+        db = SessionLocal()
+        db.execute(text("SELECT 1"))
+        db.close()
+        return {"status": "ready"}
+    except Exception as e:
+        return {"status": "not ready", "detail": str(e)}
+# Moved imports to top of file

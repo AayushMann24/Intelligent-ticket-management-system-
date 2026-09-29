@@ -44,6 +44,7 @@ from app.dependencies.roles import (
     require_technician,
     require_admin_or_technician,
 )
+from app.dependencies.csrf import csrf_protect
 
 # Import comment, history, and attachment routers
 from app.routers import ticket_comment, ticket_history, ticket_attachment
@@ -62,7 +63,7 @@ router.include_router(ticket_attachment.router)
 # Create Ticket
 # ======================================================
 
-@router.post("/", response_model=TicketResponse)
+@router.post("/", response_model=TicketResponse, dependencies=[Depends(csrf_protect)])
 def create_new_ticket(
     ticket: TicketCreate,
     db: Session = Depends(get_db),
@@ -179,6 +180,7 @@ def get_ticket(
 @router.put(
     "/{ticket_id}",
     response_model=TicketResponse,
+    dependencies=[Depends(csrf_protect)],
 )
 def update_existing_ticket(
     ticket_id: int,
@@ -204,6 +206,7 @@ def update_existing_ticket(
 @router.put(
     "/{ticket_id}/assign",
     response_model=TicketResponse,
+    dependencies=[Depends(csrf_protect)],
 )
 def assign_ticket_to_user(
     ticket_id: int,
@@ -225,6 +228,7 @@ def assign_ticket_to_user(
 @router.put(
     "/{ticket_id}/reassign",
     response_model=TicketResponse,
+    dependencies=[Depends(csrf_protect)],
 )
 def reassign_ticket_to_user(
     ticket_id: int,
@@ -246,6 +250,7 @@ def reassign_ticket_to_user(
 @router.post(
     "/{ticket_id}/unassign",
     response_model=TicketResponse,
+    dependencies=[Depends(csrf_protect)],
 )
 def unassign_ticket_from_user(
     ticket_id: int,
@@ -266,6 +271,7 @@ def unassign_ticket_from_user(
 @router.post(
     "/{ticket_id}/start-work",
     response_model=TicketResponse,
+    dependencies=[Depends(csrf_protect)],
 )
 def start_work_on_ticket(
     ticket_id: int,
@@ -285,6 +291,7 @@ def start_work_on_ticket(
 @router.post(
     "/{ticket_id}/mark-pending",
     response_model=TicketResponse,
+    dependencies=[Depends(csrf_protect)],
 )
 def mark_ticket_pending(
     ticket_id: int,
@@ -304,6 +311,7 @@ def mark_ticket_pending(
 @router.post(
     "/{ticket_id}/resolve",
     response_model=TicketResponse,
+    dependencies=[Depends(csrf_protect)],
 )
 def resolve_ticket_endpoint(
     ticket_id: int,
@@ -325,6 +333,7 @@ def resolve_ticket_endpoint(
 @router.post(
     "/{ticket_id}/reopen",
     response_model=TicketResponse,
+    dependencies=[Depends(csrf_protect)],
 )
 def reopen_ticket_endpoint(
     ticket_id: int,
@@ -346,6 +355,7 @@ def reopen_ticket_endpoint(
 @router.post(
     "/{ticket_id}/close",
     response_model=TicketResponse,
+    dependencies=[Depends(csrf_protect)],
 )
 def close_ticket_endpoint(
     ticket_id: int,
@@ -366,6 +376,7 @@ def close_ticket_endpoint(
 @router.post(
     "/{ticket_id}/escalate",
     response_model=TicketResponse,
+    dependencies=[Depends(csrf_protect)],
 )
 def escalate_ticket_endpoint(
     ticket_id: int,
@@ -410,6 +421,7 @@ def get_ticket_workflow_actions(
 @router.patch(
     "/{ticket_id}/status",
     response_model=TicketResponse,
+    dependencies=[Depends(csrf_protect)],
 )
 def update_status(
     ticket_id: int,
@@ -431,7 +443,7 @@ def update_status(
 # Delete Ticket
 # ======================================================
 
-@router.delete("/{ticket_id}")
+@router.delete("/{ticket_id}", dependencies=[Depends(csrf_protect)])
 def delete_existing_ticket(
     ticket_id: int,
     db: Session = Depends(get_db),

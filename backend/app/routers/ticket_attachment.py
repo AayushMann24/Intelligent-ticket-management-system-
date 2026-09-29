@@ -17,6 +17,7 @@ from app.services.ticket_attachment_service import (
 from app.dependencies.roles import (
     require_authenticated_user,
 )
+from app.dependencies.csrf import csrf_protect
 
 router = APIRouter(
     tags=["Ticket Attachments"],
@@ -27,6 +28,7 @@ router = APIRouter(
     "/{ticket_id}/attachments",
     response_model=TicketAttachmentResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(csrf_protect)],
 )
 async def upload_ticket_attachment(
     ticket_id: int,
@@ -103,6 +105,7 @@ def download_ticket_attachment(
 @router.delete(
     "/{ticket_id}/attachments/{attachment_id}",
     status_code=status.HTTP_200_OK,
+    dependencies=[Depends(csrf_protect)],
 )
 def delete_ticket_attachment(
     ticket_id: int,

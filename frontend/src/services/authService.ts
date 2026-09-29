@@ -50,15 +50,23 @@ export async function registerUser(
 // ======================================
 
 export interface RefreshTokenRequest {
-  refresh_token: string;
+  refresh_token?: string; // Optional - will use cookie if not provided
 }
 
 export async function refreshAccessToken(
-  data: RefreshTokenRequest
+  data: RefreshTokenRequest = {}
 ): Promise<LoginResponse> {
   const response = await api.post<LoginResponse>(
     "/auth/refresh",
     data
   );
   return response.data;
+}
+
+// ======================================
+// Logout
+// ======================================
+
+export async function logoutUser(): Promise<void> {
+  await api.post("/auth/logout");
 }

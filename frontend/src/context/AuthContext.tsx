@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 
-import { loginUser, registerUser, refreshAccessToken, type LoginData, type LoginResponse, type RegisterData } from "../services/authService";
+import { loginUser, registerUser, refreshAccessToken, logoutUser, type LoginData, type LoginResponse, type RegisterData } from "../services/authService";
 
 interface User {
   id: number;
@@ -21,7 +21,7 @@ interface AuthContextType {
   loading: boolean;
   login: (data: LoginData) => Promise<LoginResponse | null>;
   register: (data: RegisterData) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshAuth: () => Promise<void>;
 }
 
@@ -35,49 +35,41 @@ export function AuthProvider({
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Load user from localStorage on init
+  // Load user from server on init (cookies sent automatically)
   useEffect(() => {
     const initAuth = async () => {
-      const token = localStorage.getItem("token");
-      const refreshToken = localStorage.getItem("refreshToken");
-      
-      if (token) {
-        try {
-          // Try to get user profile
-          const response = await fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/users/me`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          
-          if (response.ok) {
-            const userData = await response.json();
-            setUser(userData);
-          } else if (response.status === 401 && refreshToken) {
-            // Try to refresh token
-            try {
-              await refreshAccessToken({ refresh_token: refreshToken });
-              // Retry fetching user
-              const retryResponse = await fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/users/me`, {
-                headers: {
-                  Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
-              });
-              if (retryResponse.ok) {
-                const userData = await retryResponse.json();
-                setUser(userData);
-              } else {
-                clearAuth();
-              }
-            } catch {
+      try {
+        // Try to get user profile - cookies sent automatically with withCredentials
+        const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+        const response = await fetch(`${API_URL}/users/me`, {
+          credentials: "include", // Send cookies
+        });
+        
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+        } else if (response.status === 401) {
+          // Try to refresh token
+          try {
+            await refreshAccessToken();
+            // Retry fetching user
+            const retryResponse = await fetch(`${API_URL}/users/me`, {
+              credentials: "include",
+            });
+            if (retryResponse.ok) {
+              const userData = await retryResponse.json();
+              setUser(userData);
+            } else {
               clearAuth();
             }
-          } else {
+          } catch {
             clearAuth();
           }
-        } catch {
+        } else {
           clearAuth();
         }
+      } catch {
+        clearAuth();
       }
       setLoading(false);
     };
@@ -86,12 +78,6 @@ export function AuthProvider({
   }, []);
 
   const clearAuth = useCallback(() => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("role");
-    localStorage.removeItem("name");
-    localStorage.removeItem("email");
-    localStorage.removeItem("userId");
     setUser(null);
   }, []);
 
@@ -99,13 +85,7 @@ export function AuthProvider({
     try {
       const response = await loginUser(data);
       
-      localStorage.setItem("token", response.access_token);
-      localStorage.setItem("refreshToken", response.refresh_token);
-      localStorage.setItem("role", response.role);
-      localStorage.setItem("name", response.name);
-      localStorage.setItem("email", response.email);
-      localStorage.setItem("userId", response.id.toString());
-      
+      // User data is in response, cookies are set by server
       setUser({
         id: response.id,
         name: response.name,
@@ -120,34 +100,35 @@ export function AuthProvider({
       // Don't re-throw - handle gracefully
       return null;
     }
-  }, []);
+  }, [clearAuth]);
 
   const register = useCallback(async (data: RegisterData) => {
     await registerUser(data);
+    // After registration, user needs to log in
   }, []);
 
-  const logout = useCallback(() => {
-    clearAuth();
+  const logout = useCallback(async () => {
+    try {
+      await logoutUser();
+    } finally {
+      clearAuth();
+    }
   }, [clearAuth]);
 
   const refreshAuth = useCallback(async () => {
-    const refreshToken = localStorage.getItem("refreshToken");
-    if (refreshToken) {
-      try {
-        await refreshAccessToken({ refresh_token: refreshToken });
-        // Refetch user
-        const response = await fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/users/me`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
-        if (response.ok) {
-          const userData = await response.json();
-          setUser(userData);
-        }
-      } catch {
-        clearAuth();
+    try {
+      await refreshAccessToken();
+      // Refetch user
+      const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+      const response = await fetch(`${API_URL}/users/me`, {
+        credentials: "include",
+      });
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData);
       }
+    } catch {
+      clearAuth();
     }
   }, [clearAuth]);
 
