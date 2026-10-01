@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 
 
 class TestTicketCreation:
-    def test_create_ticket_success(self, client, auth_headers):
+    def test_create_ticket_success(self, client, auth_headers, test_user):
         response = client.post("/tickets/", json={
             "title": "Test Ticket",
             "description": "This is a test ticket",
@@ -15,7 +15,7 @@ class TestTicketCreation:
         assert data["description"] == "This is a test ticket"
         assert data["priority"] == "Medium"
         assert data["status"] == "Open"
-        assert data["created_by"] == 1  # test_user id
+        assert data["created_by"] == test_user.id
         assert "id" in data
 
     def test_create_ticket_unauthorized(self, client):
@@ -283,7 +283,7 @@ class TestTicketAuthorization:
 
 
 class TestTicketComments:
-    def test_create_comment_success(self, client, auth_headers):
+    def test_create_comment_success(self, client, auth_headers, test_user):
         # Create a ticket first
         create_response = client.post("/tickets/", json={
             "title": "Comment Test",
@@ -301,7 +301,7 @@ class TestTicketComments:
         data = response.json()
         assert data["body"] == "This is a test comment"
         assert data["is_internal"] == False
-        assert data["author_id"] == 1
+        assert data["author_id"] == test_user.id
 
     def test_create_internal_note_as_technician(self, client, tech_auth_headers, technician_user, admin_auth_headers):
         # Create ticket as admin

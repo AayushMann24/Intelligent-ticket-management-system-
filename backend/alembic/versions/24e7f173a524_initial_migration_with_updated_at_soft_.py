@@ -13,7 +13,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = '24e7f173a524'
-down_revision: Union[str, Sequence[str], None] = None
+down_revision: Union[str, Sequence[str], None] = '0001_initial_schema'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -50,16 +50,13 @@ def upgrade() -> None:
     op.alter_column('tickets', 'created_at',
                existing_type=postgresql.TIMESTAMP(timezone=True),
                nullable=False)
+    # Indexes already created in 0001_initial_schema:
+    # ix_tickets_assigned_to, ix_tickets_category, ix_tickets_created_at,
+    # ix_tickets_created_by, ix_tickets_priority, ix_tickets_status
     op.create_index('ix_tickets_assigned_status', 'tickets', ['assigned_to', 'status'], unique=False)
-    op.create_index(op.f('ix_tickets_assigned_to'), 'tickets', ['assigned_to'], unique=False)
-    op.create_index(op.f('ix_tickets_category'), 'tickets', ['category'], unique=False)
-    op.create_index(op.f('ix_tickets_created_at'), 'tickets', ['created_at'], unique=False)
-    op.create_index(op.f('ix_tickets_created_by'), 'tickets', ['created_by'], unique=False)
     op.create_index('ix_tickets_created_status', 'tickets', ['created_by', 'status'], unique=False)
     op.create_index('ix_tickets_deleted_created', 'tickets', ['is_deleted', 'created_at'], unique=False)
     op.create_index(op.f('ix_tickets_is_deleted'), 'tickets', ['is_deleted'], unique=False)
-    op.create_index(op.f('ix_tickets_priority'), 'tickets', ['priority'], unique=False)
-    op.create_index(op.f('ix_tickets_status'), 'tickets', ['status'], unique=False)
     op.create_index('ix_tickets_status_priority', 'tickets', ['status', 'priority'], unique=False)
     
     op.add_column('users', sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True))
@@ -92,15 +89,11 @@ def downgrade() -> None:
     op.drop_column('users', 'is_deleted')
     op.drop_column('users', 'updated_at')
     op.drop_index('ix_tickets_status_priority', table_name='tickets')
-    op.drop_index(op.f('ix_tickets_status'), table_name='tickets')
-    op.drop_index(op.f('ix_tickets_priority'), table_name='tickets')
+    # ix_tickets_status and ix_tickets_priority dropped in 0001_initial_schema downgrade
     op.drop_index(op.f('ix_tickets_is_deleted'), table_name='tickets')
     op.drop_index('ix_tickets_deleted_created', table_name='tickets')
     op.drop_index('ix_tickets_created_status', table_name='tickets')
-    op.drop_index(op.f('ix_tickets_created_by'), table_name='tickets')
-    op.drop_index(op.f('ix_tickets_created_at'), table_name='tickets')
-    op.drop_index(op.f('ix_tickets_category'), table_name='tickets')
-    op.drop_index(op.f('ix_tickets_assigned_to'), table_name='tickets')
+    # ix_tickets_created_by, ix_tickets_created_at, ix_tickets_category, ix_tickets_assigned_to dropped in 0001_initial_schema downgrade
     op.drop_index('ix_tickets_assigned_status', table_name='tickets')
     op.alter_column('tickets', 'created_at',
                existing_type=postgresql.TIMESTAMP(timezone=True),

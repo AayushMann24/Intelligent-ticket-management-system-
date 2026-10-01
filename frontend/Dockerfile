@@ -5,13 +5,13 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Copy package files
-COPY frontend/package*.json ./
+COPY package*.json ./
 
 # Install dependencies
 RUN npm ci
 
 # Copy source code
-COPY frontend/ .
+COPY . .
 
 # Build the application
 RUN npm run build
@@ -25,7 +25,9 @@ RUN rm -rf /usr/share/nginx/html/*
 # Copy built assets from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Optional: Copy custom nginx config if needed (we'll use default)
+# Copy custom nginx config for SPA fallback
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
 # Expose port 80
 EXPOSE 80
 

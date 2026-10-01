@@ -15,6 +15,24 @@ services:
       timeout: 5s
       retries: 5
 
+  db_test:
+    image: postgres:16-alpine
+    container_name: itms_postgres_test
+    restart: unless-stopped
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: itms_test
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_pass
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5433:5432"
+
   backend:
     build: ./backend
     container_name: itms_backend
@@ -26,6 +44,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       SECRET_KEY: ${SECRET_KEY}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      # CORS: allow Docker frontend (nginx on port 80), local loopback, and Vite dev server
+      CORS_ORIGINS: '["http://localhost", "http://127.0.0.1", "http://localhost:5173"]'
     volumes:
       - uploads:/app/uploads
     depends_on:
@@ -45,4 +65,5 @@ services:
 
 volumes:
   postgres_data:
+  postgres_test_data:
   uploads:

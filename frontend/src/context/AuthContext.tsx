@@ -40,7 +40,7 @@ export function AuthProvider({
     const initAuth = async () => {
       try {
         // Try to get user profile - cookies sent automatically with withCredentials
-        const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+        const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
         const response = await fetch(`${API_URL}/users/me`, {
           credentials: "include", // Send cookies
         });
@@ -119,7 +119,7 @@ export function AuthProvider({
     try {
       await refreshAccessToken();
       // Refetch user
-      const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
       const response = await fetch(`${API_URL}/users/me`, {
         credentials: "include",
       });
