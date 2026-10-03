@@ -28,7 +28,7 @@ The test infrastructure uses a **dedicated PostgreSQL 16 test database** (`db_te
 ### 1. Start the Test Database
 
 ```bash
-docker compose up -d db_test
+docker compose --profile test up -d db_test
 ```
 
 Wait for the health check to pass (usually 10-20 seconds):
@@ -114,12 +114,12 @@ DATABASE_URL=postgresql://test_user:test_pass@localhost:5433/itms_test python -m
 
 ---
 
-## Troubleshooting
+### Troubleshooting
 
 ### Test Database Not Healthy
 
 ```bash
-docker compose logs db_test
+docker compose --profile test logs db_test
 ```
 
 Common issues:
@@ -129,7 +129,7 @@ Common issues:
 ### Tests Fail to Connect to Database
 
 Ensure:
-1. `db_test` is healthy: `docker compose ps`
+1. `db_test` is healthy: `docker compose --profile test ps`
 2. Port 5433 is accessible: `nc -zv localhost 5433`
 3. Environment variables are set correctly (check `backend/.env.test`)
 
@@ -137,9 +137,9 @@ Ensure:
 
 If the test database already exists with a different schema:
 ```bash
-docker compose down db_test
+docker compose --profile test down db_test
 docker volume rm itms_postgres_test_data
-docker compose up -d db_test
+docker compose --profile test up -d db_test
 # Wait for healthy, then re-run tests
 ```
 
@@ -166,10 +166,10 @@ services:
 
 steps:
   - name: Start test database
-    run: docker compose up -d db_test
+    run: docker compose --profile test up -d db_test
   
   - name: Wait for database
-    run: sleep 15 && docker compose ps
+    run: sleep 15 && docker compose --profile test ps
   
   - name: Run backend tests
     working-directory: backend
@@ -194,19 +194,19 @@ steps:
 
 ```bash
 # Start test DB only
-docker compose up -d db_test
+docker compose --profile test up -d db_test
 
 # Check status
-docker compose ps
+docker compose --profile test ps
 
 # View test DB logs
-docker compose logs db_test
+docker compose --profile test logs db_test
 
 # Stop test DB
-docker compose stop db_test
+docker compose --profile test stop db_test
 
 # Remove test DB and volume (full reset)
-docker compose down db_test
+docker compose --profile test down db_test
 docker volume rm itms_postgres_test_data
 
 # Run backend tests

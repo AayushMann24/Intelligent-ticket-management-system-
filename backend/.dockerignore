@@ -1,20 +1,38 @@
-# Dockerignore for backend
+# Environment and secrets
 .env
-__pycache__
-*.pyc
-*.pyo
-*.pyd
-.pytest_cache
-.venv
-venv
-ENV
-env
-bld
-bin
-.git
-.gitignore
-docker-compose.yml
-docker-compose.override.yml
-logs
-*.log
+.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+
+# Tests and documentation
+tests/
+docs/
+test_*.py
+
+# Git
+.git/
+
+# Runtime data
 uploads/
+*.log
+
+# Build artifacts
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml

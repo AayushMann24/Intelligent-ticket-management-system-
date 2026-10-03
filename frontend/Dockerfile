@@ -1,5 +1,8 @@
 # Stage 1: Build the Vite application
-FROM node:20-alpine AS builder
+FROM node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 AS builder
+
+# Build argument for API URL (Vite embeds VITE_* vars at build time)
+ARG VITE_API_URL
 
 # Set working directory
 WORKDIR /app
@@ -13,11 +16,12 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build the application
+# Build the application with VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 
 # Stage 2: Serve the production build with nginx
-FROM nginx:alpine
+FROM nginx:alpine@sha256:df221db836e1754089190208cee7eeda94f233197056426eda74a43ab1abeac2
 
 # Remove default nginx static assets
 RUN rm -rf /usr/share/nginx/html/*

@@ -2,7 +2,6 @@ from fastapi import FastAPI, Depends, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database.connection import engine
-from app.database.base import Base
 import app.models.user
 import app.models.ticket
 
@@ -27,8 +26,6 @@ from app.utils.security_headers import SecurityHeadersMiddleware
 
 # Initialize structured logging
 setup_logging()
-
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(lifespan=sla_scheduler_lifespan)
 
