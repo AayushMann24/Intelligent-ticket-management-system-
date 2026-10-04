@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 
 import {
   getDashboardSummary,
@@ -27,7 +27,7 @@ export default function useDashboard() {
   const [loading, setLoading] =
     useState(true);
 
-  const loadDashboard = async () => {
+  const loadDashboard = useCallback(async () => {
     try {
       const [
         summaryData,
@@ -50,11 +50,15 @@ export default function useDashboard() {
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    loadDashboard();
   }, []);
+
+  const hasLoaded = useRef(false);
+  useEffect(() => {
+    if (!hasLoaded.current) {
+      hasLoaded.current = true;
+      loadDashboard();
+    }
+  }, [loadDashboard]);
 
   const priorityData = summary
     ? [

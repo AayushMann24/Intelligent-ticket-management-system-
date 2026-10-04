@@ -18,7 +18,7 @@ import TicketTrendChart from "../components/dashboard/TicketTrendChart";
 import ActivityFeed from "../components/dashboard/ActivityFeed";
 
 import useDashboard from "../hooks/useDashboard";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 
 export default function DashboardPage() {
   const navigate = useNavigate();

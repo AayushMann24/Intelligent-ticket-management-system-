@@ -1,6 +1,6 @@
 import MainLayout from "../layouts/MainLayout";
 import { User, Mail, Shield } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 
 export default function ProfilePage() {
   const { user } = useAuth();

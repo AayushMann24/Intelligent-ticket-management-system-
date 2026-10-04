@@ -8,7 +8,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-import { useTheme } from "../../context/ThemeContext";
+import { useTheme } from "../../context/useTheme";
 import type { TicketTrend } from "../../services/dashboardService";
 
 interface TicketTrendChartProps {

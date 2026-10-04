@@ -1,6 +1,6 @@
 import MainLayout from "../layouts/MainLayout";
-import { useTheme } from "../context/ThemeContext";
-import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/useTheme";
+import { useAuth } from "../context/useAuth";
 import { useNavigate } from "react-router-dom";
 
 export default function SettingsPage() {

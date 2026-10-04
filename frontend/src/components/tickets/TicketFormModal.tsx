@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { X, FileText, AlertCircle } from "lucide-react";
 
 import type { Ticket, TicketType } from "../../types/ticket";
@@ -26,13 +26,20 @@ export default function TicketFormModal({
   onSubmit,
 }: TicketFormModalProps) {
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState("Medium");
-  const [status, setStatus] = useState("Open");
-  const [ticketType, setTicketType] = useState<TicketType>("INCIDENT");
+  const [title, setTitle] = useState(() => ticket?.title ?? "");
+  const [description, setDescription] = useState(() => ticket?.description ?? "");
+  const [priority, setPriority] = useState(() => ticket?.priority ?? "Medium");
+  const [status, setStatus] = useState(() => ticket?.status ?? "Open");
+  const [ticketType, setTicketType] = useState<TicketType>(() => ticket?.ticket_type ?? "INCIDENT");
 
+  // Reset form when ticket prop changes (e.g., switching between edit/create or different tickets)
+  const isInitialMount = useRef(true);
+  /* eslint-disable react-hooks/set-state-in-effect -- Syncing form state with ticket prop is a legitimate controlled/uncontrolled pattern */
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     if (ticket) {
       setTitle(ticket.title);
       setDescription(ticket.description);
@@ -47,6 +54,7 @@ export default function TicketFormModal({
       setTicketType("INCIDENT");
     }
   }, [ticket]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   if (!open) return null;
 

@@ -152,9 +152,7 @@ export interface ReopenPayload {
   reason?: string;
 }
 
-export interface ClosePayload {
-  // Empty - just confirmation
-}
+export type ClosePayload = Record<string, never>;
 
 export interface EscalatePayload {
   escalated_to: number;

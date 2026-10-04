@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { X, Shield } from "lucide-react";
 
 import type { User } from "../../types/user";
@@ -17,13 +17,21 @@ export default function UserRoleModal({
   onSave,
 }: UserRoleModalProps) {
 
-  const [role, setRole] = useState("Employee");
+  const [role, setRole] = useState(() => user?.role ?? "Employee");
 
+  // Sync role when user prop changes (e.g., different user selected)
+  const isInitialMount = useRef(true);
+  /* eslint-disable react-hooks/set-state-in-effect -- Syncing role state with user prop is a legitimate controlled/uncontrolled pattern */
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     if (user) {
       setRole(user.role);
     }
   }, [user]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   if (!open || !user) return null;
 

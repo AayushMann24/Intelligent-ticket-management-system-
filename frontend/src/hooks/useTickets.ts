@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 
 import {
   getAllTickets,
@@ -34,7 +34,7 @@ export default function useTickets() {
   // ===================================
   // Load Tickets
   // ===================================
-  const loadTickets = async () => {
+  const loadTickets = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -50,11 +50,15 @@ export default function useTickets() {
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    loadTickets();
   }, []);
+
+  const hasLoadedTickets = useRef(false);
+  useEffect(() => {
+    if (!hasLoadedTickets.current) {
+      hasLoadedTickets.current = true;
+      loadTickets();
+    }
+  }, [loadTickets]);
 
   // ===================================
   // Create Ticket

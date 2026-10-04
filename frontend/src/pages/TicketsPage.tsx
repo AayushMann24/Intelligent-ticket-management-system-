@@ -37,12 +37,28 @@ export default function TicketsPage() {
     editTicket,
     removeTicket,
   } = useTickets();
+
+  const [selectedTicket, setSelectedTicket] =
+    useState<Ticket | null>(null);
+
+  const [isFormOpen, setIsFormOpen] =
+    useState(false);
+
+  const [isViewOpen, setIsViewOpen] =
+    useState(false);
+
+  const [isDeleteOpen, setIsDeleteOpen] =
+    useState(false);
+
+  /* eslint-disable react-hooks/set-state-in-effect -- Initializing form state from URL params is a legitimate pattern */
   useEffect(() => {
-  if (createTicket === "true") {
-    setSelectedTicket(null);
-    setIsFormOpen(true);
-  }
-}, [createTicket]);
+    if (createTicket === "true") {
+      setSelectedTicket(null);
+      setIsFormOpen(true);
+    }
+  }, [createTicket]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
   useEffect(() => {
     if (statusFromDashboard) {
       setStatus(statusFromDashboard);
@@ -56,18 +72,6 @@ export default function TicketsPage() {
       setSearch(searchFromNavbar);
     }
   }, [searchFromNavbar, setSearch]);
-
-  const [selectedTicket, setSelectedTicket] =
-    useState<Ticket | null>(null);
-
-  const [isFormOpen, setIsFormOpen] =
-    useState(false);
-
-  const [isViewOpen, setIsViewOpen] =
-    useState(false);
-
-  const [isDeleteOpen, setIsDeleteOpen] =
-    useState(false);
 
   if (loading) {
     return (

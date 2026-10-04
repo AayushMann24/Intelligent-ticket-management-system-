@@ -1,6 +1,5 @@
 import {
   createContext,
-  useContext,
   useEffect,
   useState,
   type ReactNode,
@@ -13,7 +12,8 @@ interface ThemeContextType {
   toggleTheme: () => void;
 }
 
-const ThemeContext = createContext<ThemeContextType | undefined>(
+/* eslint-disable react-refresh/only-export-components -- React context + provider in same file is a standard pattern */
+export const ThemeContext = createContext<ThemeContextType | undefined>(
   undefined
 );
 
@@ -65,14 +65,3 @@ export function ThemeProvider({
   );
 }
 
-export function useTheme() {
-  const context = useContext(ThemeContext);
-
-  if (!context) {
-    throw new Error(
-      "useTheme must be used inside ThemeProvider"
-    );
-  }
-
-  return context;
-}

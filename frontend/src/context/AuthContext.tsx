@@ -1,6 +1,5 @@
 import {
   createContext,
-  useContext,
   useState,
   useEffect,
   useCallback,
@@ -25,7 +24,8 @@ interface AuthContextType {
   refreshAuth: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+/* eslint-disable react-refresh/only-export-components -- React context + provider in same file is a standard pattern */
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({
   children,
@@ -34,6 +34,10 @@ export function AuthProvider({
 }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const clearAuth = useCallback(() => {
+    setUser(null);
+  }, []);
 
   // Load user from server on init (cookies sent automatically)
   useEffect(() => {
@@ -75,11 +79,7 @@ export function AuthProvider({
     };
 
     initAuth();
-  }, []);
-
-  const clearAuth = useCallback(() => {
-    setUser(null);
-  }, []);
+  }, [clearAuth]);
 
   const login = useCallback(async (data: LoginData) => {
     try {
@@ -94,7 +94,7 @@ export function AuthProvider({
       });
       
       return response;
-    } catch (error) {
+    } catch {
       // Clear any partial auth state on error
       clearAuth();
       // Don't re-throw - handle gracefully
@@ -148,10 +148,3 @@ export function AuthProvider({
   );
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
-}

@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import { AuthProvider, useAuth } from '../context/AuthContext';
+import { AuthProvider } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // Mock the auth service
@@ -10,7 +11,7 @@ vi.mock('../services/authService', () => ({
   logoutUser: vi.fn(),
 }));
 
-import { loginUser, registerUser, refreshAccessToken, logoutUser } from '../services/authService';
+import { loginUser, refreshAccessToken, logoutUser } from '../services/authService';
 
 // Mock fetch
 global.fetch = vi.fn();
@@ -110,7 +111,7 @@ describe('AuthContext', () => {
         fireEvent.click(screen.getByTestId('login-btn'));
         // Wait for the promise to settle
         await new Promise(resolve => setTimeout(resolve, 0));
-      } catch (e) {
+      } catch {
         // Expected to throw
       }
     });

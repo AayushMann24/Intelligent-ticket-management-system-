@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 
 import {
   getUsers,
@@ -20,7 +20,7 @@ export default function useUsers() {
   // ======================================
   // Load Users
   // ======================================
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     try {
       const data = await getUsers();
       setUsers(data);
@@ -29,12 +29,12 @@ export default function useUsers() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // ======================================
   // Update User Role
   // ======================================
-  const changeRole = async (
+  const changeRole = useCallback(async (
     userId: number,
     roleData: UpdateRoleRequest
   ) => {
@@ -44,11 +44,15 @@ export default function useUsers() {
     } catch (error) {
       console.error("Failed to update role:", error);
     }
-  };
+  }, [loadUsers]);
 
+  const hasLoadedUsers = useRef(false);
   useEffect(() => {
-    loadUsers();
-  }, []);
+    if (!hasLoadedUsers.current) {
+      hasLoadedUsers.current = true;
+      loadUsers();
+    }
+  }, [loadUsers]);
 
   // ======================================
   // Search & Filter
