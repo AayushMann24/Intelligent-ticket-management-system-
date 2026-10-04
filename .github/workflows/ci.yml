@@ -41,6 +41,16 @@ jobs:
         working-directory: backend
         env:
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5433/itms_test
+          SECRET_KEY: test_secret_key_for_ci_only
+          ALGORITHM: HS256
+          ENVIRONMENT: test
+          DEBUG: "true"
+          RATE_LIMIT_ENABLED: "false"
+          SLA_MONITOR_ENABLED: "false"
+          COOKIE_SECURE: "false"
+          HSTS_ENABLED: "false"
+          CSP_ENABLED: "true"
+          SECURITY_HEADERS_ENABLED: "true"
         run: alembic upgrade head
       - name: Run backend tests
         working-directory: backend
