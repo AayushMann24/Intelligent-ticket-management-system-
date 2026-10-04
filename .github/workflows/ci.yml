@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: itms_test
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+        ports: ["5433:5432"]
+        options: >-
+          --health-cmd "pg_isready -U test_user"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: 'backend/requirements.txt'
+      - name: Install backend dependencies
+        working-directory: backend
+        run: pip install -r requirements.txt
+      - name: Run Alembic migrations
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5433/itms_test
+        run: alembic upgrade head
+      - name: Run backend tests
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5433/itms_test
+          SECRET_KEY: test_secret_key_for_ci_only
+          ALGORITHM: HS256
+          ENVIRONMENT: test
+          DEBUG: "true"
+          RATE_LIMIT_ENABLED: "false"
+          SLA_MONITOR_ENABLED: "false"
+          COOKIE_SECURE: "false"
+          HSTS_ENABLED: "false"
+          CSP_ENABLED: "true"
+          SECURITY_HEADERS_ENABLED: "true"
+        run: python -m pytest tests/ -v --tb=short
+
+  frontend:
+    name: Frontend Tests & Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Run frontend linter
+        working-directory: frontend
+        run: npm run lint
+      - name: Run frontend tests
+        working-directory: frontend
+        run: npm run test:run
+      - name: Run frontend build
+        working-directory: frontend
+        env:
+          VITE_API_URL: http://localhost:8000
+        run: npm run build
+
+  docker:
+    name: Docker Image Builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build backend image
+        run: docker build ./backend --tag itms-backend:ci
+      - name: Build frontend image
+        run: docker build ./frontend --tag itms-frontend:ci --build-arg VITE_API_URL=http://localhost:8000
