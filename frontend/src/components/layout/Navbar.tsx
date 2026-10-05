@@ -12,6 +12,8 @@ import { useState, useEffect, useRef } from "react";
 
 import { useAuth } from "../../context/useAuth";
 import { useTheme } from "../../context/useTheme";
+import NotificationDropdown from "./NotificationDropdown";
+import { useNotifications } from "../../hooks/useNotifications";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -19,11 +21,14 @@ export default function Navbar() {
   const { user, logout } = useAuth();
 
   const { theme, toggleTheme } = useTheme();
+  const { unreadCount } = useNotifications();
 
   const [search, setSearch] = useState("");
   const [profileOpen, setProfileOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   const profileRef = useRef<HTMLDivElement>(null);
+  const notificationsRef = useRef<HTMLDivElement>(null);
 
   // =====================================
   // Logout
@@ -57,6 +62,12 @@ export default function Navbar() {
         !profileRef.current.contains(event.target as Node)
       ) {
         setProfileOpen(false);
+      }
+      if (
+        notificationsRef.current &&
+        !notificationsRef.current.contains(event.target as Node)
+      ) {
+        setNotificationsOpen(false);
       }
     }
 
@@ -185,22 +196,37 @@ export default function Navbar() {
 
         {/* Notifications */}
 
-        <button
-          className="
-          relative
-          text-slate-600
-          transition
-          hover:text-black
-          dark:text-slate-300
-          dark:hover:text-white
-        "
-        >
-          <Bell size={22} />
+        <div ref={notificationsRef} className="relative">
+          <button
+            onClick={() => setNotificationsOpen(!notificationsOpen)}
+            className="
+            relative
+            p-2
+            rounded-lg
+            text-slate-600
+            transition
+            hover:bg-slate-100
+            hover:text-black
+            dark:text-slate-300
+            dark:hover:bg-slate-800
+            dark:hover:text-white
+          "
+            aria-label="Notifications"
+          >
+            <Bell size={22} />
 
-          <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
-            3
-          </span>
-        </button>
+            {unreadCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-medium text-white">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </button>
+
+          <NotificationDropdown
+            isOpen={notificationsOpen}
+            onClose={() => setNotificationsOpen(false)}
+          />
+        </div>
 
         {/* Profile */}
 
