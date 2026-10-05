@@ -1,4 +1,4 @@
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 // Mock the notification service BEFORE importing the hook
@@ -151,8 +151,8 @@ describe('useNotifications', () => {
         await result.current.fetchUnreadCount();
       });
 
-      // Error is silently ignored for unread count
-      expect(result.current.unreadCount).toBe(0);
+      // Error is silently ignored for unread count - count remains at previous value (1)
+      expect(result.current.unreadCount).toBe(1);
     });
   });
 
@@ -250,7 +250,7 @@ describe('useNotifications', () => {
     });
 
     it('continues polling while mounted', () => {
-      const { result } = renderHook(() => useNotifications());
+      renderHook(() => useNotifications());
 
       expect(getUnreadCount).toHaveBeenCalledTimes(1);
 

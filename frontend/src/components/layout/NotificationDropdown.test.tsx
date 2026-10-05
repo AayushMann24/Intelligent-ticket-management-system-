@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -56,14 +56,6 @@ describe('NotificationDropdown', () => {
   afterEach(() => {
     vi.useRealTimers();
   });
-
-  const renderDropdown = (isOpen = true) => {
-    return render(
-      <MemoryRouter>
-        <NotificationDropdown isOpen={isOpen} onClose={vi.fn()} />
-      </MemoryRouter>
-    );
-  };
 
   describe('rendering', () => {
     it('does not render when closed', () => {
@@ -166,7 +158,7 @@ describe('NotificationDropdown', () => {
         </MemoryRouter>
       );
 
-      expect(screen.getByText('1/1/2024')).toBeInTheDocument();
+      expect(screen.getAllByText('1/1/2024')).toHaveLength(2);
     });
   });
 

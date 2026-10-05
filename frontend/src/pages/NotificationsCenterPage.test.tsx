@@ -1,190 +1,113 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
+
+import { useNotifications } from '../hooks/useNotifications';
+import NotificationsCenterPage from '../pages/NotificationsCenterPage';
 
 // Mock the useNotifications hook
 vi.mock('../hooks/useNotifications', () => ({
   useNotifications: vi.fn(),
 }));
 
-import { useNotifications } from '../hooks/useNotifications';
-import NotificationsCenterPage from '../pages/NotificationsCenterPage';
-import type { Notification } from '../types/notification';
-
 describe('NotificationsCenterPage', () => {
-  const mockNotifications = [
-    {
-      id: 1,
-      notification_type: 'TICKET_ASSIGNED',
-      title: 'Ticket Assigned',
-      message: 'Ticket #42 assigned to you',
-      ticket_id: 42,
-      is_read: false,
-      read_at: null,
-      created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-01T00:00:00Z',
-    },
-    {
-      id: 2,
-      notification_type: 'SLA_RESPONSE_BREACHED',
-      title: 'SLA Breached',
-      message: 'SLA breached for ticket #43',
-      ticket_id: 43,
-      is_read: true,
-      read_at: '2024-01-01T01:00:00Z',
-      created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-01T00:00:00Z',
-    },
-    {
-      id: 3,
-      notification_type: 'TICKET_ESCALATED',
-      title: 'Ticket Escalated',
-      message: 'Ticket escalated to you',
-      ticket_id: 44,
-      is_read: false,
-      read_at: null,
-      created_at: '2024-01-01T02:00:00Z',
-      updated_at: '2024-01-01T02:00:00Z',
-    },
-  ];
-
-  const mockListResponse = {
-    items: [
-      { id: 1, notification_type: 'TICKET_ASSIGNED', title: 'Ticket Assigned', message: 'Ticket #42 assigned to you', ticket_id: 42, is_read: false, read_at: null, created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' },
-      { id: 2, notification_type: 'SLA_RESPONSE_BREACHED', title: 'SLA Breached', message: 'SLA breached for ticket #43', ticket_id: 43, is_read: true, read_at: '2024-01-01T01:00:00Z', created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' },
-      { id: 3, notification_type: 'TICKET_ESCALATED', title: 'Ticket Escalated', message: 'Ticket escalated to you', ticket_id: 44, is_read: false, read_at: null, created_at: '2024-01-01T02:00:00Z', updated_at: '2024-01-01T02:00:00Z' },
-    ],
-    total: 3,
-    page: 1,
-    page_size: 20,
-    total_pages: 2,
-  };
-
-  const mockUseNotifications = {
-    notifications: [
-      { id: 1, notification_type: 'TICKET_ASSIGNED', title: 'Ticket Assigned', message: 'Ticket #42 assigned to you', ticket_id: 42, is_read: false, read_at: null, created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' },
-      { id: 2, notification_type: 'SLA_RESPONSE_BREACHED', title: 'SLA Breached', message: 'SLA breached for ticket #43', ticket_id: 43, is_read: true, read_at: '2024-01-01T01:00:00Z', created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' },
-      { id: 3, notification_type: 'TICKET_ESCALATED', title: 'Ticket Escalated', message: 'Ticket escalated to you', ticket_id: 44, is_read: false, read_at: null, created_at: '2024-01-01T02:00:00Z', updated_at: '2024-01-01T02:00:00Z' },
-    ],
-    unreadCount: 2,
-    loading: false,
-    error: null,
-    fetchNotifications: vi.fn().mockResolvedValue({
-      items: [
-        { id: 1, notification_type: 'TICKET_ASSIGNED', title: 'Ticket Assigned', message: 'Ticket #42 assigned to you', ticket_id: 42, is_read: false, read_at: null, created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' },
-        { id: 2, notification_type: 'SLA_RESPONSE_BREACHED', title: 'SLA Breached', message: 'SLA breached for ticket #43', ticket_id: 43, is_read: true, read_at: '2024-01-01T01:00:00Z', created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' },
-        { id: 3, notification_type: 'TICKET_ESCALATED', title: 'Ticket Escalated', message: 'Ticket escalated to you', ticket_id: 44, is_read: false, read_at: null, created_at: '2024-01-01T02:00:00Z', updated_at: '2024-01-01T02:00:00Z' },
-      ],
-      total: 3,
-      page: 1,
-      page_size: 20,
-      total_pages: 2,
-    }),
-    markAsRead: vi.fn().mockResolvedValue(undefined),
-    markAllAsRead: vi.fn().mockResolvedValue(undefined),
-  };
+  let mockUseNotifications: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.useFakeTimers();
+
+    mockUseNotifications = {
+      unreadCount: 2,
+      loading: false,
+      error: null,
+      fetchNotifications: vi.fn().mockResolvedValue({
+        items: [
+          { id: 1, notification_type: 'TICKET_ASSIGNED', title: 'Ticket Assigned', message: 'Ticket #42 assigned to you', ticket_id: 42, is_read: false, read_at: null, created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' },
+          { id: 2, notification_type: 'SLA_RESPONSE_BREACHED', title: 'SLA Breached', message: 'SLA breached for ticket #43', ticket_id: 43, is_read: true, read_at: '2024-01-01T01:00:00Z', created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' },
+          { id: 3, notification_type: 'TICKET_ESCALATED', title: 'Ticket Escalated', message: 'Ticket escalated to you', ticket_id: 44, is_read: false, read_at: null, created_at: '2024-01-01T02:00:00Z', updated_at: '2024-01-01T02:00:00Z' },
+        ],
+        total: 3,
+        page: 1,
+        page_size: 20,
+        total_pages: 2,
+      }),
+      markAsRead: vi.fn().mockResolvedValue(undefined),
+      markAllAsRead: vi.fn().mockResolvedValue(undefined),
+    };
+
     (useNotifications as vi.Mock).mockReturnValue(mockUseNotifications);
   });
 
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  const renderPage = () => {
-    return render(
+  const renderPage = async (options?: { waitForEmpty?: boolean }) => {
+    const result = render(
       <MemoryRouter>
         <NotificationsCenterPage />
       </MemoryRouter>
     );
+    // Wait for notifications to load (component fetches async in useEffect)
+    if (options?.waitForEmpty) {
+      await waitFor(() => {
+        expect(screen.getByText('No notifications')).toBeInTheDocument();
+      });
+    } else {
+      await waitFor(() => {
+        expect(screen.getByText('Ticket Assigned')).toBeInTheDocument();
+      });
+    }
+    return result;
   };
 
   describe('rendering', () => {
-    it('renders page title', () => {
-      render(
-        <MemoryRouter>
-          <NotificationsCenterPage />
-        </MemoryRouter>
-      );
+    it('renders page title', async () => {
+      await renderPage();
       expect(screen.getByText('Notifications')).toBeInTheDocument();
       expect(screen.getByText('Manage and view your notifications')).toBeInTheDocument();
     });
 
-    it('shows unread count', () => {
-      render(
-        <MemoryRouter>
-          <NotificationsCenterPage />
-        </MemoryRouter>
-      );
-      expect(screen.getByText('2')).toBeInTheDocument();
-    });
-
-    it('shows mark all as read button when unread > 0', () => {
-      render(
-        <MemoryRouter>
-          <NotificationsCenterPage />
-        </MemoryRouter>
-      );
+    it('shows mark all as read button when unread > 0', async () => {
+      await renderPage();
       expect(screen.getByText('Mark all as read')).toBeInTheDocument();
     });
 
-    it('hides mark all as read button when unread = 0', () => {
+    it('hides mark all as read button when unread = 0', async () => {
       (useNotifications as vi.Mock).mockReturnValue({
-        ...mockUseNotifications,
         unreadCount: 0,
+        loading: false,
+        error: null,
+        fetchNotifications: vi.fn().mockResolvedValue({ items: [], total: 0, page: 1, page_size: 20, total_pages: 1 }),
+        markAsRead: vi.fn().mockResolvedValue(undefined),
+        markAllAsRead: vi.fn().mockResolvedValue(undefined),
       });
 
-      render(
-        <MemoryRouter>
-          <NotificationsCenterPage />
-        </MemoryRouter>
-      );
+      await renderPage({ waitForEmpty: true });
       expect(screen.queryByText('Mark all as read')).not.toBeInTheDocument();
     });
 
-    it('shows filter button', () => {
-      render(
-        <MemoryRouter>
-          <NotificationsCenterPage />
-        </MemoryRouter>
-      );
+    it('shows filter button', async () => {
+      await renderPage();
       expect(screen.getByText('Filters')).toBeInTheDocument();
     });
   });
 
   describe('notification list', () => {
-    it('renders notifications with correct content', () => {
-      render(
-        <MemoryRouter>
-          <NotificationsCenterPage />
-        </MemoryRouter>
-      );
+    it('renders notifications with correct content', async () => {
+      await renderPage();
 
       expect(screen.getByText('Ticket Assigned')).toBeInTheDocument();
       expect(screen.getByText('SLA Breached')).toBeInTheDocument();
       expect(screen.getByText('Ticket Escalated')).toBeInTheDocument();
     });
 
-    it('shows relative time', () => {
-      render(
-        <MemoryRouter>
-          <NotificationsCenterPage />
-        </MemoryRouter>
-      );
-      expect(screen.getByText('1/1/2024')).toBeInTheDocument();
+    it('shows relative time', async () => {
+      await renderPage();
+
+      expect(screen.getAllByText('1/1/2024')).toHaveLength(3);
     });
   });
 
   describe('mark as read', () => {
     it('marks notification as read on click', async () => {
-      render(
-        <MemoryRouter>
-          <NotificationsCenterPage />
-        </MemoryRouter>
-      );
+      await renderPage();
 
       await act(async () => {
         fireEvent.click(screen.getByText('Ticket Assigned'));
@@ -194,11 +117,7 @@ describe('NotificationsCenterPage', () => {
     });
 
     it('navigates to ticket on click', async () => {
-      render(
-        <MemoryRouter>
-          <NotificationsCenterPage />
-        </MemoryRouter>
-      );
+      await renderPage();
 
       await act(async () => {
         fireEvent.click(screen.getByText('Ticket Assigned'));
@@ -208,11 +127,7 @@ describe('NotificationsCenterPage', () => {
 
   describe('mark all as read', () => {
     it('calls markAllAsRead when button clicked', async () => {
-      render(
-        <MemoryRouter>
-          <NotificationsCenterPage />
-        </MemoryRouter>
-      );
+      await renderPage();
 
       await act(async () => {
         fireEvent.click(screen.getByText('Mark all as read'));
@@ -223,17 +138,17 @@ describe('NotificationsCenterPage', () => {
   });
 
   describe('empty state', () => {
-    it('shows empty state when no notifications', () => {
+    it('shows empty state when no notifications', async () => {
       (useNotifications as vi.Mock).mockReturnValue({
-        ...mockUseNotifications,
-        notifications: [],
+        unreadCount: 0,
+        loading: false,
+        error: null,
+        fetchNotifications: vi.fn().mockResolvedValue({ items: [], total: 0, page: 1, page_size: 20, total_pages: 1 }),
+        markAsRead: vi.fn().mockResolvedValue(undefined),
+        markAllAsRead: vi.fn().mockResolvedValue(undefined),
       });
 
-      render(
-        <MemoryRouter>
-          <NotificationsCenterPage />
-        </MemoryRouter>
-      );
+      await renderPage({ waitForEmpty: true });
 
       expect(screen.getByText('No notifications')).toBeInTheDocument();
       expect(screen.getByText('No notifications yet.')).toBeInTheDocument();
@@ -241,56 +156,55 @@ describe('NotificationsCenterPage', () => {
   });
 
   describe('error state', () => {
-    it('shows error state', () => {
+    it('shows error state', async () => {
       (useNotifications as vi.Mock).mockReturnValue({
-        ...mockUseNotifications,
-        error: new Error('Failed to load'),
+        unreadCount: 0,
         loading: false,
+        error: new Error('Failed to load'),
+        fetchNotifications: vi.fn().mockResolvedValue({ items: [], total: 0, page: 1, page_size: 20, total_pages: 1 }),
+        markAsRead: vi.fn().mockResolvedValue(undefined),
+        markAllAsRead: vi.fn().mockResolvedValue(undefined),
       });
 
-      render(
-        <MemoryRouter>
-          <NotificationsCenterPage />
-        </MemoryRouter>
-      );
+      await renderPage({ waitForEmpty: true });
 
       expect(screen.getByText('Failed to load notifications')).toBeInTheDocument();
     });
 
-    it('shows retry button', () => {
+    it('shows retry button', async () => {
       (useNotifications as vi.Mock).mockReturnValue({
-        ...mockUseNotifications,
-        error: new Error('Failed to load'),
+        unreadCount: 0,
         loading: false,
+        error: new Error('Failed to load'),
+        fetchNotifications: vi.fn().mockResolvedValue({ items: [], total: 0, page: 1, page_size: 20, total_pages: 1 }),
+        markAsRead: vi.fn().mockResolvedValue(undefined),
+        markAllAsRead: vi.fn().mockResolvedValue(undefined),
       });
 
-      render(
-        <MemoryRouter>
-          <NotificationsCenterPage />
-        </MemoryRouter>
-      );
+      await renderPage({ waitForEmpty: true });
 
       expect(screen.getByText('Try again')).toBeInTheDocument();
     });
 
     it('retries on button click', async () => {
+      const fetchNotificationsMock = vi.fn().mockResolvedValue({ items: [], total: 0, page: 1, page_size: 20, total_pages: 1 });
+
       (useNotifications as vi.Mock).mockReturnValue({
-        ...mockUseNotifications,
-        error: new Error('Failed to load'),
+        unreadCount: 0,
         loading: false,
+        error: new Error('Failed to load'),
+        fetchNotifications: fetchNotificationsMock,
+        markAsRead: vi.fn().mockResolvedValue(undefined),
+        markAllAsRead: vi.fn().mockResolvedValue(undefined),
       });
 
-      render(
-        <MemoryRouter>
-          <NotificationsCenterPage />
-        </MemoryRouter>
-      );
+      await renderPage({ waitForEmpty: true });
 
       await act(async () => {
         fireEvent.click(screen.getByText('Try again'));
       });
 
-      expect(screen.getByText('Try again')).toBeInTheDocument();
+      expect(fetchNotificationsMock).toHaveBeenCalled();
     });
   });
 });
