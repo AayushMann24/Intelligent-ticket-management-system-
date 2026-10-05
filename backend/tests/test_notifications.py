@@ -854,3 +854,1175 @@ class TestNotificationIntegration:
         data = response.json()
         breach_notifs = [n for n in data["items"] if n["notification_type"] == "SLA_RESPONSE_BREACHED"]
         assert len(breach_notifs) == 1
+
+
+class TestEscalationService:
+    """Tests for Escalation Service (Phase 2D-3B)."""
+
+    def test_create_escalation_rule(self, db_session):
+        """Test creating an escalation rule."""
+        from app.services.escalation_service import (
+            create_escalation_rule,
+            get_escalation_rule,
+            EscalationEventType,
+        )
+        
+        rule = create_escalation_rule(
+            db=db_session,
+            name="Critical Response Breach Escalation",
+            event_type=EscalationEventType.RESPONSE_BREACH,
+            priority="Critical",
+            target_role="Admin",
+            description="Escalate critical response breaches to Admin",
+            notify_enabled=True,
+            email_enabled=True,
+        )
+        
+        assert rule.id is not None
+        assert rule.name == "Critical Response Breach Escalation"
+        assert rule.event_type == EscalationEventType.RESPONSE_BREACH
+        assert rule.priority == "Critical"
+        assert rule.target_role == "Admin"
+        assert rule.notify_enabled is True
+        assert rule.email_enabled is True
+        assert rule.is_active is True
+        assert rule.precedence == 2  # event_type + priority
+
+    def test_create_escalation_rule_with_ticket_type(self, db_session):
+        """Test creating an escalation rule with ticket_type increases precedence."""
+        from app.services.escalation_service import (
+            create_escalation_rule,
+            EscalationEventType,
+        )
+        
+        rule = create_escalation_rule(
+            db=db_session,
+            name="Critical Incident Response Breach",
+            event_type=EscalationEventType.RESPONSE_BREACH,
+            priority="Critical",
+            target_role="Technician",
+            ticket_type="INCIDENT",
+            category="Network",
+        )
+        
+        assert rule.ticket_type == "INCIDENT"
+        assert rule.category == "Network"
+        assert rule.precedence == 4  # event_type + priority + ticket_type + category
+
+    def test_get_escalation_rule(self, db_session):
+        """Test retrieving an escalation rule by ID."""
+        from app.services.escalation_service import (
+            create_escalation_rule,
+            get_escalation_rule,
+            get_escalation_rule_by_name,
+            EscalationEventType,
+        )
+        
+        rule = create_escalation_rule(
+            db=db_session,
+            name="Test Rule",
+            event_type=EscalationEventType.RESOLUTION_BREACH,
+            priority="High",
+            target_role="Technician",
+        )
+        
+        retrieved = get_escalation_rule(db_session, rule.id)
+        assert retrieved is not None
+        assert retrieved.id == rule.id
+        assert retrieved.name == "Test Rule"
+        
+        by_name = get_escalation_rule_by_name(db_session, "Test Rule")
+        assert by_name is not None
+        assert by_name.id == rule.id
+
+    def test_list_escalation_rules(self, db_session):
+        """Test listing escalation rules with pagination."""
+        from app.services.escalation_service import (
+            create_escalation_rule,
+            list_escalation_rules,
+            EscalationEventType,
+        )
+        
+        for i in range(5):
+            create_escalation_rule(
+                db=db_session,
+                name=f"Rule {i}",
+                event_type=EscalationEventType.RESPONSE_BREACH,
+                priority="High",
+                target_role="Admin",
+            )
+        
+        result = list_escalation_rules(db_session, page=1, page_size=3)
+        assert result["total"] == 5
+        assert len(result["items"]) == 3
+        assert result["page"] == 1
+        assert result["page_size"] == 3
+        assert result["total_pages"] == 2
+        
+        # Test filtering by event_type
+        result = list_escalation_rules(db_session, event_type=EscalationEventType.RESPONSE_BREACH)
+        assert result["total"] == 5
+        
+        # Test filtering by priority
+        result = list_escalation_rules(db_session, priority="High")
+        assert result["total"] == 5
+
+    def test_update_escalation_rule(self, db_session):
+        """Test updating an escalation rule."""
+        from app.services.escalation_service import (
+            create_escalation_rule,
+            update_escalation_rule,
+            EscalationEventType,
+        )
+        
+        rule = create_escalation_rule(
+            db=db_session,
+            name="Original Name",
+            event_type=EscalationEventType.RESPONSE_BREACH,
+            priority="Critical",
+            target_role="Admin",
+            is_active=True,
+        )
+        
+        updated = update_escalation_rule(
+            db=db_session,
+            rule_id=rule.id,
+            name="Updated Name",
+            target_role="Technician",
+            is_active=False,
+        )
+        
+        assert updated.name == "Updated Name"
+        assert updated.target_role == "Technician"
+        assert updated.is_active is False
+
+    def test_delete_escalation_rule(self, db_session):
+        """Test soft deleting an escalation rule."""
+        from app.services.escalation_service import (
+            create_escalation_rule,
+            delete_escalation_rule,
+            get_escalation_rule,
+            EscalationEventType,
+        )
+        
+        rule = create_escalation_rule(
+            db=db_session,
+            name="To Delete",
+            event_type=EscalationEventType.RESOLUTION_BREACH,
+            priority="Medium",
+            target_role="Admin",
+        )
+        
+        result = delete_escalation_rule(db_session, rule.id)
+        assert result is True
+        
+        retrieved = get_escalation_rule(db_session, rule.id)
+        assert retrieved.is_active is False
+
+    def test_rule_matching_specificity(self, db_session):
+        """Test that more specific rules take precedence over generic ones."""
+        from app.services.escalation_service import (
+            create_escalation_rule,
+            get_best_matching_rule,
+            EscalationEventType,
+        )
+        
+        # Generic rule for High priority
+        create_escalation_rule(
+            db=db_session,
+            name="Generic High Priority Response Breach",
+            event_type=EscalationEventType.RESPONSE_BREACH,
+            priority="High",
+            target_role="Admin",
+        )
+        db_session.commit()
+        
+        # Generic rule for Medium priority
+        create_escalation_rule(
+            db=db_session,
+            name="Generic Medium Priority Response Breach",
+            event_type=EscalationEventType.RESPONSE_BREACH,
+            priority="Medium",
+            target_role="Admin",
+        )
+        db_session.commit()
+        
+        # Specific rule for High priority INCIDENT type (priority + ticket_type)
+        create_escalation_rule(
+            db=db_session,
+            name="High Priority Incident Response Breach",
+            event_type=EscalationEventType.RESPONSE_BREACH,
+            priority="High",
+            target_role="Technician",
+            ticket_type="INCIDENT",
+        )
+        db_session.commit()
+        
+        # Even more specific with category (priority + ticket_type + category)
+        create_escalation_rule(
+            db=db_session,
+            name="High Priority Network Incident Response Breach",
+            event_type=EscalationEventType.RESPONSE_BREACH,
+            priority="High",
+            target_role="Admin",
+            ticket_type="INCIDENT",
+            category="Network",
+        )
+        db_session.commit()
+        
+        # Test matching - should get the most specific rule
+        rule = get_best_matching_rule(
+            db=db_session,
+            event_type=EscalationEventType.RESPONSE_BREACH,
+            priority="High",
+            ticket_type="INCIDENT",
+            category="Network",
+        )
+        assert rule is not None, "Should match the most specific rule (Network category)"
+        assert rule.name == "High Priority Network Incident Response Breach"
+        
+        # Test without category - should get INCIDENT-specific rule
+        rule = get_best_matching_rule(
+            db=db_session,
+            event_type=EscalationEventType.RESPONSE_BREACH,
+            priority="High",
+            ticket_type="INCIDENT",
+            category="Database",
+        )
+        assert rule is not None, "Should match INCIDENT-specific rule"
+        assert rule.name == "High Priority Incident Response Breach"
+        
+        # Test with different priority (Medium) - should get Medium generic rule
+        rule = get_best_matching_rule(
+            db=db_session,
+            event_type=EscalationEventType.RESPONSE_BREACH,
+            priority="Medium",
+            ticket_type="INCIDENT",
+        )
+        assert rule is not None, "Should match generic rule for Medium priority"
+        assert rule.name == "Generic Medium Priority Response Breach"
+        
+        # Test no matching rule (Low priority has no rules)
+        rule = get_best_matching_rule(
+            db=db_session,
+            event_type=EscalationEventType.RESPONSE_BREACH,
+            priority="Low",
+        )
+        assert rule is None
+
+    def test_disabled_rule_not_matched(self, db_session):
+        """Test that disabled rules are not matched."""
+        from app.services.escalation_service import (
+            create_escalation_rule,
+            get_best_matching_rule,
+            EscalationEventType,
+        )
+        
+        create_escalation_rule(
+            db=db_session,
+            name="Disabled Rule",
+            event_type=EscalationEventType.RESPONSE_BREACH,
+            priority="Critical",
+            target_role="Admin",
+            is_active=False,
+        )
+        
+        rule = get_best_matching_rule(
+            db=db_session,
+            event_type=EscalationEventType.RESPONSE_BREACH,
+            priority="Critical",
+        )
+        assert rule is None
+
+    def test_resolve_escalation_recipient_admin(self, db_session):
+        """Test recipient resolution for Admin target role."""
+        from app.services.escalation_service import (
+            create_escalation_rule,
+            resolve_escalation_recipient,
+            EscalationEventType,
+        )
+        from app.models.ticket import Ticket
+        from app.models.user import User
+        from app.utils.security import hash_password
+        
+        # Create Admin user
+        admin = User(
+            name="Admin User",
+            email="admin_escalation@example.com",
+            password=hash_password("password123"),
+            role="Admin",
+        )
+        db_session.add(admin)
+        
+        # Create Technician user
+        tech = User(
+            name="Tech User",
+            email="tech_escalation@example.com",
+            password=hash_password("password123"),
+            role="Technician",
+        )
+        db_session.add(tech)
+        db_session.commit()
+        
+        # Create rule targeting Admin
+        rule = create_escalation_rule(
+            db=db_session,
+            name="Admin Escalation",
+            event_type=EscalationEventType.RESPONSE_BREACH,
+            priority="Critical",
+            target_role="Admin",
+        )
+        
+        # Create a test ticket
+        ticket = Ticket(
+            title="Test Ticket",
+            description="Test",
+            priority="Critical",
+            status="Open",
+            ticket_type="INCIDENT",
+            created_by=tech.id,
+        )
+        db_session.add(ticket)
+        db_session.commit()
+        
+        recipient = resolve_escalation_recipient(db_session, ticket, rule)
+        assert recipient is not None
+        assert recipient.role == "Admin"
+        assert recipient.id == admin.id
+
+    def test_resolve_escalation_recipient_technician_fallback(self, db_session):
+        """Test fallback to Admin when no Technician available."""
+        from app.services.escalation_service import (
+            create_escalation_rule,
+            resolve_escalation_recipient,
+            EscalationEventType,
+        )
+        from app.models.ticket import Ticket
+        from app.models.user import User
+        from app.utils.security import hash_password
+        
+        # First, ensure no Technician exists in this test's transaction
+        # Delete any existing technicians (from other tests that might have leaked)
+        db_session.query(User).filter(User.role == "Technician").delete()
+        db_session.commit()
+        
+        # Create only Admin user (no Technician)
+        admin = User(
+            name="Admin Only",
+            email="admin_only@example.com",
+            password=hash_password("password123"),
+            role="Admin",
+        )
+        db_session.add(admin)
+        db_session.commit()
+        
+        # Verify no technician exists
+        tech_count = db_session.query(User).filter(User.role == "Technician").count()
+        assert tech_count == 0, "No technician should exist for fallback test"
+        
+        # Create rule targeting Technician
+        rule = create_escalation_rule(
+            db=db_session,
+            name="Tech Escalation",
+            event_type=EscalationEventType.RESPONSE_BREACH,
+            priority="High",
+            target_role="Technician",
+        )
+        
+        # Create a test ticket
+        ticket = Ticket(
+            title="Test Ticket",
+            description="Test",
+            priority="High",
+            status="Open",
+            ticket_type="INCIDENT",
+            created_by=admin.id,
+        )
+        db_session.add(ticket)
+        db_session.commit()
+        
+        # Should fall back to Admin
+        recipient = resolve_escalation_recipient(db_session, ticket, rule)
+        assert recipient is not None
+        assert recipient.role == "Admin"
+        assert recipient.id == admin.id
+
+    def test_resolve_escalation_recipient_no_users(self, db_session):
+        """Test recipient resolution when no users exist."""
+        from app.services.escalation_service import (
+            create_escalation_rule,
+            resolve_escalation_recipient,
+            EscalationEventType,
+        )
+        from app.models.ticket import Ticket
+        from app.models.user import User
+        
+        # Ensure no users exist
+        db_session.query(User).delete()
+        db_session.commit()
+        
+        rule = create_escalation_rule(
+            db=db_session,
+            name="No Recipient Rule",
+            event_type=EscalationEventType.RESPONSE_BREACH,
+            priority="Critical",
+            target_role="Admin",
+        )
+        
+        # Create a mock ticket object without saving to DB (no FK issues)
+        ticket = Ticket(
+            title="Test Ticket",
+            description="Test",
+            priority="Critical",
+            status="Open",
+            ticket_type="INCIDENT",
+        )
+        # Don't add to session - just use as object for recipient resolution
+        
+        recipient = resolve_escalation_recipient(db_session, ticket, rule)
+        assert recipient is None
+
+    def test_check_escalation_exists(self, db_session):
+        """Test idempotency check for existing escalation records."""
+        from app.services.escalation_service import (
+            create_escalation_rule,
+            check_escalation_exists,
+            EscalationEventType,
+        )
+        from app.models.ticket import Ticket
+        from app.models.user import User
+        from app.utils.security import hash_password
+        
+        # Create users and rule
+        admin = User(
+            name="Admin",
+            email="admin_check@example.com",
+            password=hash_password("password123"),
+            role="Admin",
+        )
+        db_session.add(admin)
+        
+        rule = create_escalation_rule(
+            db=db_session,
+            name="Check Rule",
+            event_type=EscalationEventType.RESPONSE_BREACH,
+            priority="High",
+            target_role="Admin",
+        )
+        
+        ticket = Ticket(
+            title="Test Ticket",
+            description="Test",
+            priority="High",
+            status="Open",
+            ticket_type="INCIDENT",
+            created_by=admin.id,
+        )
+        db_session.add(ticket)
+        db_session.commit()
+        
+        # No escalation record yet
+        existing = check_escalation_exists(db_session, ticket.id, EscalationEventType.RESPONSE_BREACH, rule.id)
+        assert existing is None
+        
+        # Create escalation record
+        from app.models.escalation import EscalationRecord
+        record = EscalationRecord(
+            ticket_id=ticket.id,
+            event_type=EscalationEventType.RESPONSE_BREACH,
+            rule_id=rule.id,
+            recipient_id=admin.id,
+        )
+        db_session.add(record)
+        db_session.commit()
+        
+        # Now should find it
+        existing = check_escalation_exists(db_session, ticket.id, EscalationEventType.RESPONSE_BREACH, rule.id)
+        assert existing is not None
+        assert existing.id == record.id
+        assert existing.ticket_id == ticket.id
+        assert existing.event_type == EscalationEventType.RESPONSE_BREACH
+        assert existing.rule_id == rule.id
+
+    def test_create_escalation_notification(self, db_session):
+        """Test creating escalation notification."""
+        from app.services.escalation_service import (
+            create_escalation_rule,
+            create_escalation_notification,
+            EscalationEventType,
+        )
+        from app.models.ticket import Ticket
+        from app.models.user import User
+        from app.utils.security import hash_password
+        from app.models.notification import Notification
+        
+        admin = User(
+            name="Admin Notify",
+            email="admin_notify@example.com",
+            password=hash_password("password123"),
+            role="Admin",
+        )
+        tech = User(
+            name="Tech Notify",
+            email="tech_notify@example.com",
+            password=hash_password("password123"),
+            role="Technician",
+        )
+        db_session.add_all([admin, tech])
+        
+        rule = create_escalation_rule(
+            db=db_session,
+            name="Notify Rule",
+            event_type=EscalationEventType.RESOLUTION_BREACH,
+            priority="Critical",
+            target_role="Admin",
+            notify_enabled=True,
+        )
+        
+        ticket = Ticket(
+            title="Resolution Breach Ticket",
+            description="Test",
+            priority="Critical",
+            status="Open",
+            ticket_type="INCIDENT",
+            created_by=tech.id,
+            assigned_to=tech.id,
+        )
+        db_session.add(ticket)
+        db_session.commit()
+        
+        notification_id = create_escalation_notification(db_session, ticket, admin, EscalationEventType.RESOLUTION_BREACH, rule)
+        assert notification_id is not None
+        
+        # Verify notification was created
+        notification = db_session.query(Notification).filter(Notification.id == notification_id).first()
+        assert notification is not None
+        assert notification.recipient_id == admin.id
+        assert notification.notification_type.value == "TICKET_ESCALATED"
+        assert "Resolution" in notification.title
+        assert "escalated" in notification.message.lower()
+        assert notification.ticket_id == ticket.id
+
+    def test_escalation_notification_disabled(self, db_session):
+        """Test that notification is not created when disabled in rule."""
+        from app.services.escalation_service import (
+            create_escalation_rule,
+            create_escalation_notification,
+            EscalationEventType,
+        )
+        from app.models.ticket import Ticket
+        from app.models.user import User
+        from app.utils.security import hash_password
+        
+        admin = User(
+            name="Admin No Notify",
+            email="admin_nonotify@example.com",
+            password=hash_password("password123"),
+            role="Admin",
+        )
+        db_session.add(admin)
+        
+        rule = create_escalation_rule(
+            db=db_session,
+            name="No Notify Rule",
+            event_type=EscalationEventType.RESPONSE_BREACH,
+            priority="High",
+            target_role="Admin",
+            notify_enabled=False,
+        )
+        
+        ticket = Ticket(
+            title="Test",
+            description="Test",
+            priority="High",
+            status="Open",
+            ticket_type="INCIDENT",
+            created_by=admin.id,
+        )
+        db_session.add(ticket)
+        db_session.commit()
+        
+        notification_id = create_escalation_notification(db_session, ticket, admin, EscalationEventType.RESPONSE_BREACH, rule)
+        assert notification_id is None
+
+    def test_build_escalation_email(self, db_session):
+        """Test building escalation email content."""
+        from app.services.escalation_service import (
+            create_escalation_rule,
+            build_escalation_email,
+            EscalationEventType,
+        )
+        from app.models.ticket import Ticket
+        from app.models.user import User
+        from app.utils.security import hash_password
+        from datetime import datetime, timezone
+        
+        admin = User(
+            name="Admin Email",
+            email="admin_email@example.com",
+            password=hash_password("password123"),
+            role="Admin",
+        )
+        tech = User(
+            name="Tech Email",
+            email="tech_email@example.com",
+            password=hash_password("password123"),
+            role="Technician",
+        )
+        db_session.add_all([admin, tech])
+        
+        rule = create_escalation_rule(
+            db=db_session,
+            name="Email Rule",
+            event_type=EscalationEventType.RESPONSE_BREACH,
+            priority="Critical",
+            target_role="Admin",
+            email_enabled=True,
+        )
+        
+        ticket = Ticket(
+            title="Email Test Ticket",
+            description="Test description",
+            priority="Critical",
+            status="Open",
+            ticket_type="INCIDENT",
+            category="Network",
+            created_by=tech.id,
+            assigned_to=tech.id,
+            sla_response_deadline=datetime.now(timezone.utc),
+        )
+        db_session.add(ticket)
+        db_session.commit()
+        
+        subject, body = build_escalation_email(ticket, admin, EscalationEventType.RESPONSE_BREACH, rule)
+        
+        assert "Escalation" in subject
+        assert "Response" in subject
+        assert str(ticket.id) in subject
+        assert ticket.title in subject
+        
+        assert "Email Test Ticket" in body
+        assert "Critical" in body
+        assert "INCIDENT" in body
+        assert "Network" in body
+        assert "Tech Email" in body
+        assert "admin_email@example.com" in body
+        assert "Response" in body
+        assert rule.name in body
+
+    def test_escalation_email_disabled(self, db_session):
+        """Test email not sent when disabled in rule."""
+        from app.services.escalation_service import (
+            create_escalation_rule,
+            send_escalation_email,
+            EscalationEventType,
+        )
+        from app.models.ticket import Ticket
+        from app.models.user import User
+        from app.utils.security import hash_password
+        
+        admin = User(
+            name="Admin No Email",
+            email="admin_noemail@example.com",
+            password=hash_password("password123"),
+            role="Admin",
+        )
+        db_session.add(admin)
+        
+        rule = create_escalation_rule(
+            db=db_session,
+            name="No Email Rule",
+            event_type=EscalationEventType.RESPONSE_BREACH,
+            priority="High",
+            target_role="Admin",
+            email_enabled=False,
+        )
+        
+        ticket = Ticket(
+            title="Test",
+            description="Test",
+            priority="High",
+            status="Open",
+            ticket_type="INCIDENT",
+            created_by=admin.id,
+        )
+        db_session.add(ticket)
+        db_session.commit()
+        
+        import asyncio
+        result = asyncio.run(send_escalation_email(ticket, admin, EscalationEventType.RESPONSE_BREACH, rule))
+        assert result.success is False
+        assert "disabled" in result.error.lower() or "email_enabled" in result.error.lower()
+
+    def test_record_escalation_history(self, db_session):
+        """Test recording escalation history event."""
+        from app.services.escalation_service import (
+            create_escalation_rule,
+            record_escalation_history,
+            EscalationEventType,
+        )
+        from app.models.ticket import Ticket
+        from app.models.user import User
+        from app.models.ticket_comment import TicketHistory, HistoryEventType
+        from app.utils.security import hash_password
+        
+        admin = User(
+            name="Admin History",
+            email="admin_history@example.com",
+            password=hash_password("password123"),
+            role="Admin",
+        )
+        system = User(
+            name="ITMS System",
+            email="system@itms.local",
+            password="",
+            role="Admin",
+        )
+        tech = User(
+            name="Tech History",
+            email="tech_history@example.com",
+            password=hash_password("password123"),
+            role="Technician",
+        )
+        db_session.add_all([admin, system, tech])
+        db_session.commit()
+        
+        rule = create_escalation_rule(
+            db=db_session,
+            name="History Rule",
+            event_type=EscalationEventType.RESOLUTION_BREACH,
+            priority="Critical",
+            target_role="Admin",
+        )
+        
+        ticket = Ticket(
+            title="History Test",
+            description="Test",
+            priority="Critical",
+            status="Open",
+            ticket_type="INCIDENT",
+            created_by=tech.id,
+            assigned_to=tech.id,
+        )
+        db_session.add(ticket)
+        db_session.commit()
+        
+        record_escalation_history(db_session, ticket, admin, EscalationEventType.RESOLUTION_BREACH, rule, system)
+        db_session.commit()
+        
+        # Verify history was recorded
+        history = db_session.query(TicketHistory).filter(
+            TicketHistory.ticket_id == ticket.id,
+            TicketHistory.event_type == HistoryEventType.ESCALATED,
+        ).first()
+        
+        assert history is not None
+        assert history.actor_id == system.id
+        assert "Resolution" in history.new_value
+        assert "escalated" in history.new_value.lower()
+        assert admin.name in history.new_value
+        assert rule.name in history.new_value
+
+    def test_process_escalation_full_flow(self, db_session):
+        """Test full escalation processing flow."""
+        from app.services.escalation_service import (
+            create_escalation_rule,
+            process_escalation,
+            EscalationEventType,
+        )
+        from app.models.escalation import EscalationRecord
+        from app.models.notification import Notification
+        from app.models.ticket import Ticket
+        from app.models.user import User
+        from app.utils.security import hash_password
+        from app.models.ticket_comment import TicketHistory, HistoryEventType
+        from datetime import datetime, timezone
+        
+        # Create users
+        admin = User(
+            name="Admin Full Flow",
+            email="admin_fullflow@example.com",
+            password=hash_password("password123"),
+            role="Admin",
+        )
+        tech = User(
+            name="Tech Full Flow",
+            email="tech_fullflow@example.com",
+            password=hash_password("password123"),
+            role="Technician",
+        )
+        db_session.add_all([admin, tech])
+        
+        # Create rule
+        rule = create_escalation_rule(
+            db=db_session,
+            name="Full Flow Rule",
+            event_type=EscalationEventType.RESPONSE_BREACH,
+            priority="Critical",
+            target_role="Admin",
+            notify_enabled=True,
+            email_enabled=True,
+        )
+        
+        # Create ticket with SLA (no policy needed for escalation test)
+        ticket = Ticket(
+            title="Full Flow Ticket",
+            description="Test ticket for full escalation flow",
+            priority="Critical",
+            status="Open",
+            ticket_type="INCIDENT",
+            category="Network",
+            created_by=tech.id,
+            assigned_to=tech.id,
+            sla_response_deadline=datetime.now(timezone.utc),
+        )
+        db_session.add(ticket)
+        db_session.commit()
+        
+        import asyncio
+        result = asyncio.run(process_escalation(db_session, ticket, EscalationEventType.RESPONSE_BREACH))
+        assert result is True
+        
+        # Verify escalation record created
+        record = db_session.query(EscalationRecord).filter(
+            EscalationRecord.ticket_id == ticket.id,
+            EscalationRecord.event_type == EscalationEventType.RESPONSE_BREACH,
+        ).first()
+        
+        assert record is not None
+        assert record.rule_id == rule.id
+        assert record.recipient_id == admin.id
+        assert record.notification_created is True
+        assert record.notification_id is not None
+        assert record.history_recorded is True
+        
+        # Verify notification created
+        notification = db_session.query(Notification).filter(
+            Notification.id == record.notification_id
+        ).first()
+        assert notification is not None
+        assert notification.recipient_id == admin.id
+        
+        # Verify history recorded
+        history = db_session.query(TicketHistory).filter(
+            TicketHistory.ticket_id == ticket.id,
+            TicketHistory.event_type == HistoryEventType.ESCALATED,
+        ).first()
+        assert history is not None
+        
+        # Verify ticket escalation fields updated
+        db_session.refresh(ticket)
+        assert ticket.escalated_to == admin.id
+        assert ticket.escalation_reason is not None
+        assert "Response" in ticket.escalation_reason
+
+    def test_process_escalation_idempotent(self, db_session):
+        """Test that repeated escalation processing creates no duplicates."""
+        from app.services.escalation_service import (
+            create_escalation_rule,
+            process_escalation,
+            EscalationEventType,
+        )
+        from app.models.escalation import EscalationRecord
+        from app.models.notification import Notification, NotificationType
+        from app.models.ticket import Ticket
+        from app.models.user import User
+        from app.models.ticket_comment import TicketHistory, HistoryEventType
+        from app.utils.security import hash_password
+        from datetime import datetime, timezone
+        
+        admin = User(
+            name="Admin Idempotent",
+            email="admin_idempotent@example.com",
+            password=hash_password("password123"),
+            role="Admin",
+        )
+        tech = User(
+            name="Tech Idempotent",
+            email="tech_idempotent@example.com",
+            password=hash_password("password123"),
+            role="Technician",
+        )
+        db_session.add_all([admin, tech])
+        
+        rule = create_escalation_rule(
+            db=db_session,
+            name="Idempotent Rule",
+            event_type=EscalationEventType.RESPONSE_BREACH,
+            priority="High",
+            target_role="Admin",
+            notify_enabled=True,
+            email_enabled=True,
+        )
+        
+        ticket = Ticket(
+            title="Idempotent Test",
+            description="Test",
+            priority="High",
+            status="Open",
+            ticket_type="INCIDENT",
+            created_by=tech.id,
+            assigned_to=tech.id,
+            sla_response_deadline=datetime.now(timezone.utc),
+        )
+        db_session.add(ticket)
+        db_session.commit()
+        
+        import asyncio
+        # First execution
+        result1 = asyncio.run(process_escalation(db_session, ticket, EscalationEventType.RESPONSE_BREACH))
+        assert result1 is True
+        
+        # Second execution - should return True but not create duplicates
+        result2 = asyncio.run(process_escalation(db_session, ticket, EscalationEventType.RESPONSE_BREACH))
+        assert result2 is True
+        
+        # Third execution
+        result3 = asyncio.run(process_escalation(db_session, ticket, EscalationEventType.RESPONSE_BREACH))
+        assert result3 is True
+        
+        # Verify only one escalation record
+        records = db_session.query(EscalationRecord).filter(
+            EscalationRecord.ticket_id == ticket.id,
+            EscalationRecord.event_type == EscalationEventType.RESPONSE_BREACH,
+        ).all()
+        assert len(records) == 1
+        
+        # Verify only one notification
+        notifications = db_session.query(Notification).filter(
+            Notification.ticket_id == ticket.id,
+            Notification.notification_type == NotificationType.TICKET_ESCALATED,
+            Notification.recipient_id == admin.id,
+        ).all()
+        assert len(notifications) == 1
+        
+        # Verify only one history event
+        histories = db_session.query(TicketHistory).filter(
+            TicketHistory.ticket_id == ticket.id,
+            TicketHistory.event_type == HistoryEventType.ESCALATED,
+        ).all()
+        assert len(histories) == 1
+
+    def test_process_escalation_no_matching_rule(self, db_session):
+        """Test that no escalation occurs when no rule matches."""
+        from app.services.escalation_service import (
+            process_escalation,
+            EscalationEventType,
+        )
+        from app.models.ticket import Ticket
+        from app.models.user import User
+        from app.utils.security import hash_password
+        from datetime import datetime, timezone
+        
+        tech = User(
+            name="Tech No Rule",
+            email="tech_norule@example.com",
+            password=hash_password("password123"),
+            role="Technician",
+        )
+        db_session.add(tech)
+        db_session.commit()
+        
+        # No rules created
+        
+        ticket = Ticket(
+            title="No Rule Ticket",
+            description="Test",
+            priority="Low",  # No rule for Low priority
+            status="Open",
+            ticket_type="INCIDENT",
+            created_by=tech.id,
+            sla_response_deadline=datetime.now(timezone.utc),
+        )
+        db_session.add(ticket)
+        db_session.commit()
+        
+        import asyncio
+        result = asyncio.run(process_escalation(db_session, ticket, EscalationEventType.RESPONSE_BREACH))
+        assert result is False
+        
+        # Verify no escalation record created
+        from app.models.escalation import EscalationRecord
+        records = db_session.query(EscalationRecord).filter(
+            EscalationRecord.ticket_id == ticket.id,
+        ).all()
+        assert len(records) == 0
+
+    def test_escalation_idempotency_persists(self, db_session):
+        """Test that idempotency is enforced by database unique constraint."""
+        from app.services.escalation_service import (
+            create_escalation_rule,
+            process_escalation,
+            EscalationEventType,
+        )
+        from app.models.escalation import EscalationRecord
+        from app.models.notification import Notification, NotificationType
+        from app.models.ticket import Ticket
+        from app.models.user import User
+        from app.utils.security import hash_password
+        from datetime import datetime, timezone
+        from sqlalchemy.exc import IntegrityError
+        
+        # Create users
+        admin = User(
+            name="Admin Persist",
+            email="admin_persist@example.com",
+            password=hash_password("password123"),
+            role="Admin",
+        )
+        tech = User(
+            name="Tech Persist",
+            email="tech_persist@example.com",
+            password=hash_password("password123"),
+            role="Technician",
+        )
+        db_session.add_all([admin, tech])
+        
+        rule = create_escalation_rule(
+            db=db_session,
+            name="Persist Rule",
+            event_type=EscalationEventType.RESPONSE_BREACH,
+            priority="Critical",
+            target_role="Admin",
+            notify_enabled=True,
+            email_enabled=True,
+        )
+        
+        ticket = Ticket(
+            title="Persist Ticket",
+            description="Test",
+            priority="Critical",
+            status="Open",
+            ticket_type="INCIDENT",
+            created_by=tech.id,
+            assigned_to=tech.id,
+            sla_response_deadline=datetime.now(timezone.utc),
+        )
+        db_session.add(ticket)
+        db_session.commit()
+        
+        import asyncio
+        # First escalation - should succeed
+        result1 = asyncio.run(process_escalation(db_session, ticket, EscalationEventType.RESPONSE_BREACH))
+        assert result1 is True
+        
+        # Second escalation - should return True (idempotent) but not create duplicates
+        result2 = asyncio.run(process_escalation(db_session, ticket, EscalationEventType.RESPONSE_BREACH))
+        assert result2 is True
+        
+        # Third escalation
+        result3 = asyncio.run(process_escalation(db_session, ticket, EscalationEventType.RESPONSE_BREACH))
+        assert result3 is True
+        
+        # Verify only one escalation record exists (enforced by unique constraint)
+        records = db_session.query(EscalationRecord).filter(
+            EscalationRecord.ticket_id == ticket.id,
+            EscalationRecord.event_type == EscalationEventType.RESPONSE_BREACH,
+        ).all()
+        assert len(records) == 1
+        
+        # Verify only one notification
+        notifications = db_session.query(Notification).filter(
+            Notification.ticket_id == ticket.id,
+            Notification.notification_type == NotificationType.TICKET_ESCALATED,
+            Notification.recipient_id == admin.id,
+        ).all()
+        assert len(notifications) == 1
+        
+        # Verify unique constraint prevents manual duplicate insert
+        duplicate_record = EscalationRecord(
+            ticket_id=ticket.id,
+            event_type=EscalationEventType.RESPONSE_BREACH,
+            rule_id=rule.id,
+            recipient_id=admin.id,
+        )
+        db_session.add(duplicate_record)
+        try:
+            db_session.commit()
+            assert False, "Should have raised IntegrityError for duplicate escalation record"
+        except IntegrityError:
+            db_session.rollback()
+            # Expected - unique constraint prevents duplicates
+            pass
+        
+        # Verify only one record still exists
+        records = db_session.query(EscalationRecord).filter(
+            EscalationRecord.ticket_id == ticket.id,
+            EscalationRecord.event_type == EscalationEventType.RESPONSE_BREACH,
+        ).all()
+        assert len(records) == 1
+
+    def test_concurrent_escalation_protection(self, db_session):
+        """Test that unique constraint prevents concurrent duplicate escalations."""
+        from app.services.escalation_service import (
+            create_escalation_rule,
+            EscalationEventType,
+        )
+        from app.models.escalation import EscalationRecord
+        from app.models.ticket import Ticket
+        from app.models.user import User
+        from app.utils.security import hash_password
+        from datetime import datetime, timezone
+        from sqlalchemy.exc import IntegrityError
+        
+        admin = User(
+            name="Admin Concurrent",
+            email="admin_concurrent@example.com",
+            password=hash_password("password123"),
+            role="Admin",
+        )
+        db_session.add(admin)
+        
+        rule = create_escalation_rule(
+            db=db_session,
+            name="Concurrent Rule",
+            event_type=EscalationEventType.RESPONSE_BREACH,
+            priority="High",
+            target_role="Admin",
+        )
+        
+        ticket = Ticket(
+            title="Concurrent Ticket",
+            description="Test",
+            priority="High",
+            status="Open",
+            ticket_type="INCIDENT",
+            created_by=admin.id,
+            sla_response_deadline=datetime.now(timezone.utc),
+        )
+        db_session.add(ticket)
+        db_session.commit()
+        
+        # Try to create two escalation records for same ticket/event/rule
+        record1 = EscalationRecord(
+            ticket_id=ticket.id,
+            event_type=EscalationEventType.RESPONSE_BREACH,
+            rule_id=rule.id,
+            recipient_id=admin.id,
+        )
+        db_session.add(record1)
+        db_session.commit()
+        
+        # Second insert should fail due to unique constraint
+        record2 = EscalationRecord(
+            ticket_id=ticket.id,
+            event_type=EscalationEventType.RESPONSE_BREACH,
+            rule_id=rule.id,
+            recipient_id=admin.id,
+        )
+        db_session.add(record2)
+        
+        try:
+            db_session.commit()
+            assert False, "Should have raised IntegrityError"
+        except IntegrityError:
+            db_session.rollback()
+            # Expected - unique constraint prevents duplicates
+            pass
+        
+        # Verify only one record exists
+        records = db_session.query(EscalationRecord).filter(
+            EscalationRecord.ticket_id == ticket.id,
+            EscalationRecord.event_type == EscalationEventType.RESPONSE_BREACH,
+        ).all()
+        assert len(records) == 1

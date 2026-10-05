@@ -1,4 +1,5 @@
 from datetime import datetime, timezone, timedelta
+import logging
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 
@@ -8,6 +9,9 @@ from app.models.user import User
 from app.services.ticket_history_service import record_history
 from app.services.notification_service import create_notification
 from app.models.notification import NotificationType
+from app.services.escalation_service import process_escalation, EscalationEventType
+
+logger = logging.getLogger(__name__)
 
 
 def get_system_user(db: Session) -> User:
@@ -131,6 +135,21 @@ def process_response_breach(db: Session, ticket: Ticket) -> bool:
         )
 
     db.commit()
+
+    # Trigger automatic escalation
+    try:
+        import asyncio
+        # Run async escalation in sync context
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_until_complete(process_escalation(db, ticket, EscalationEventType.RESPONSE_BREACH))
+        finally:
+            loop.close()
+    except Exception as e:
+        # Log but don't fail the breach processing
+        logger.error(f"Escalation failed for ticket {ticket.id}: {e}")
+
     return True
 
 
@@ -198,6 +217,20 @@ def process_resolution_breach(db: Session, ticket: Ticket) -> bool:
         )
 
     db.commit()
+
+    # Trigger automatic escalation
+    try:
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_until_complete(process_escalation(db, ticket, EscalationEventType.RESOLUTION_BREACH))
+        finally:
+            loop.close()
+    except Exception as e:
+        # Log but don't fail the breach processing
+        logger.error(f"Escalation failed for ticket {ticket.id}: {e}")
+
     return True
 
 
