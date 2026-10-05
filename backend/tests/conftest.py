@@ -1,5 +1,6 @@
 import os
 import pytest
+from unittest.mock import patch
 from sqlalchemy import create_engine, event, inspect, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
@@ -181,6 +182,40 @@ def reset_rate_limiter():
     yield
     import asyncio
     asyncio.run(rate_limiter.reset_all())
+
+
+@pytest.fixture(scope="function", autouse=True)
+def mock_ai_service():
+    """
+    Mock AI service to prevent external network calls to Ollama during tests.
+    
+    Returns deterministic AI analysis results that match the structure
+    expected by ticket_service.create_ticket() -> build_ticket().
+    
+    This fixture is autouse because:
+    - No tests explicitly test AI functionality
+    - All ticket creation tests indirectly invoke the AI pipeline
+    - CI does not run Ollama, causing connection refused errors
+    - The production code already has a fallback for when AI is unavailable
+    """
+    def mock_analyze_ticket(title: str, description: str, technicians: list):
+        return {
+            "category": "Other",
+            "subcategory": "General",
+            "keywords": [],
+            "confidence": 0.0,
+            "priority": "Medium",
+            "priority_reason": "Test mock priority",
+            "assigned_to": None,
+            "assignment_reason": "Test mock assignment",
+        }
+    
+    def mock_dashboard_insights(dashboard_stats: dict):
+        return {"summary": "Test mock insights", "details": {}}
+    
+    with patch("app.services.ai_service.AIService.analyze_ticket", side_effect=mock_analyze_ticket):
+        with patch("app.services.ai_service.AIService.dashboard_insights", side_effect=mock_dashboard_insights):
+            yield
 
 
 @pytest.fixture(scope="function")
