@@ -6,6 +6,8 @@ from app.models.ticket import Ticket
 from app.models.ticket_comment import TicketHistory, HistoryEventType
 from app.models.user import User
 from app.services.ticket_history_service import record_history
+from app.services.notification_service import create_notification
+from app.models.notification import NotificationType
 
 
 def get_system_user(db: Session) -> User:
@@ -107,6 +109,27 @@ def process_response_breach(db: Session, ticket: Ticket) -> bool:
         new_value=f"Response SLA breached. Deadline was {ticket.sla_response_deadline.isoformat()}",
     )
 
+    # Create notification for assigned user (and creator if different)
+    if ticket.assigned_to:
+        create_notification(
+            db=db,
+            recipient_id=ticket.assigned_to,
+            notification_type=NotificationType.SLA_RESPONSE_BREACHED,
+            title="SLA Response Breached",
+            message=f"Ticket #{ticket.id}: {ticket.title} has breached its response SLA deadline.",
+            ticket_id=ticket.id,
+        )
+    # Also notify ticket creator if different from assignee
+    elif ticket.created_by:
+        create_notification(
+            db=db,
+            recipient_id=ticket.created_by,
+            notification_type=NotificationType.SLA_RESPONSE_BREACHED,
+            title="SLA Response Breached",
+            message=f"Ticket #{ticket.id}: {ticket.title} has breached its response SLA deadline.",
+            ticket_id=ticket.id,
+        )
+
     db.commit()
     return True
 
@@ -152,6 +175,27 @@ def process_resolution_breach(db: Session, ticket: Ticket) -> bool:
         old_value="",
         new_value=f"Resolution SLA breached. Deadline was {ticket.sla_resolution_deadline.isoformat()}",
     )
+
+    # Create notification for assigned user (and creator if different)
+    if ticket.assigned_to:
+        create_notification(
+            db=db,
+            recipient_id=ticket.assigned_to,
+            notification_type=NotificationType.SLA_RESOLUTION_BREACHED,
+            title="SLA Resolution Breached",
+            message=f"Ticket #{ticket.id}: {ticket.title} has breached its resolution SLA deadline.",
+            ticket_id=ticket.id,
+        )
+    # Also notify ticket creator if different from assignee
+    elif ticket.created_by:
+        create_notification(
+            db=db,
+            recipient_id=ticket.created_by,
+            notification_type=NotificationType.SLA_RESOLUTION_BREACHED,
+            title="SLA Resolution Breached",
+            message=f"Ticket #{ticket.id}: {ticket.title} has breached its resolution SLA deadline.",
+            ticket_id=ticket.id,
+        )
 
     db.commit()
     return True

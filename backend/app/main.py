@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database.connection import engine
 import app.models.user
 import app.models.ticket
+import app.models.notification
 
 from app.dependencies.auth import verify_token
 
@@ -11,6 +12,7 @@ from app.routers import auth
 from app.routers import ticket
 from app.routers import user
 from app.routers import sla
+from app.routers import notification
 #from app.routers import ai
 from app.routers.dashboard import router as dashboard_router
 # AI routers - commented out for testing without langchain dependencies
@@ -63,6 +65,7 @@ app.include_router(auth.router)
 app.include_router(ticket.router)
 app.include_router(user.router)
 app.include_router(sla.router)
+app.include_router(notification.router)
 #app.include_router(ai.router)
 app.include_router(dashboard_router)
 # app.include_router(assistant.router)

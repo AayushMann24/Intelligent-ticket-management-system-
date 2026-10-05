@@ -103,3 +103,12 @@ class User(Base):
         foreign_keys="Ticket.escalated_to",
         back_populates="escalation_target",
     )
+
+    # Notifications received by this user
+    notifications = relationship(
+        "Notification",
+        foreign_keys="Notification.recipient_id",
+        back_populates="recipient",
+        cascade="all, delete-orphan",
+        lazy="dynamic",
+    )

@@ -19,6 +19,9 @@ except ImportError:
 from app.services.ticket_history_service import record_history, HistoryEventType
 # SLA service for automatic SLA assignment
 from app.services.sla_service import assign_sla_to_ticket, mark_response_sla_met, mark_resolution_sla_met
+# Notification service
+from app.services.notification_service import create_notification
+from app.models.notification import NotificationType
 from app.services.ticket_utils import (
     _base_ticket_query,
     _base_user_query,
@@ -659,6 +662,17 @@ def assign_ticket(db: Session, ticket_id: int, assigned_to: int, user_id: int, u
             new_value=TicketStatus.ASSIGNED,
         )
 
+    # Create notification for assigned user
+    notification_type = NotificationType.TICKET_REASSIGNED if old_assigned else NotificationType.TICKET_ASSIGNED
+    create_notification(
+        db=db,
+        recipient_id=assigned_to,
+        notification_type=notification_type,
+        title=f"Ticket {notification_type.value.replace('_', ' ').title()}",
+        message=f"Ticket #{ticket_id}: {ticket.title} has been {'reassigned to' if old_assigned else 'assigned to'} you.",
+        ticket_id=ticket_id,
+    )
+
     return ticket
 
 
@@ -711,6 +725,16 @@ def reassign_ticket(db: Session, ticket_id: int, assigned_to: int, user_id: int,
         event_type=HistoryEventType.REASSIGNED,
         old_value=str(old_assigned),
         new_value=str(assigned_to),
+    )
+
+    # Create notification for newly assigned user
+    create_notification(
+        db=db,
+        recipient_id=assigned_to,
+        notification_type=NotificationType.TICKET_REASSIGNED,
+        title="Ticket Reassigned",
+        message=f"Ticket #{ticket_id}: {ticket.title} has been reassigned to you.",
+        ticket_id=ticket_id,
     )
 
     return ticket
@@ -1056,6 +1080,16 @@ def escalate_ticket(db: Session, ticket_id: int, escalated_to: int, escalation_r
         event_type=HistoryEventType.ESCALATED,
         old_value="",
         new_value=f"Escalated to {target_user.name}: {escalation_reason.strip()}",
+    )
+
+    # Create notification for escalation target
+    create_notification(
+        db=db,
+        recipient_id=escalated_to,
+        notification_type=NotificationType.TICKET_ESCALATED,
+        title="Ticket Escalated",
+        message=f"Ticket #{ticket_id}: {ticket.title} has been escalated to you. Reason: {escalation_reason.strip()}",
+        ticket_id=ticket_id,
     )
 
     return ticket

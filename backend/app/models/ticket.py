@@ -305,6 +305,13 @@ class Ticket(Base):
         lazy="dynamic",
     )
 
+    notifications = relationship(
+        "Notification",
+        back_populates="ticket",
+        cascade="all, delete-orphan",
+        lazy="dynamic",
+    )
+
     # =====================================================
     # Table Indexes
     # =====================================================
