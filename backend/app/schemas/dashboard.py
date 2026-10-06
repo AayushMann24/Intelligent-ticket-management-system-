@@ -143,3 +143,86 @@ class AnalyticsFilters(BaseModel):
     ticket_type: Optional[str] = None
     assignee_id: Optional[int] = None
     granularity: Optional[str] = "daily"
+
+
+# ======================================================
+# Report Schemas (Phase 2E - Checkpoint 3)
+# ======================================================
+
+class TicketReportSummary(BaseModel):
+    total_tickets: int
+    by_status: Dict[str, int]
+    by_priority: Dict[str, int]
+    by_ticket_type: Dict[str, int]
+
+
+class SLAReportSummary(BaseModel):
+    response_sla: Dict[str, Any]
+    resolution_sla: Dict[str, Any]
+    by_priority: Dict[str, Any]
+
+
+class EscalationReportSummary(BaseModel):
+    total_escalations: int
+    by_event_type: Dict[str, int]
+    by_priority: Dict[str, int]
+    by_recipient_role: Dict[str, int]
+    escalations_over_time: List[Dict[str, Any]]
+
+
+class TechnicianReportSummary(BaseModel):
+    total_technicians: int
+    total_assigned: int
+    total_open: int
+    total_resolved: int
+    total_escalations_received: int
+    total_escalations_initiated: int
+    total_response_breached: int
+    total_resolution_breached: int
+
+
+class ReportFilters(BaseModel):
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    priority: Optional[str] = None
+    category: Optional[str] = None
+    ticket_type: Optional[str] = None
+    assignee_id: Optional[int] = None
+    status: Optional[str] = None
+    breach_type: Optional[str] = None
+
+
+class ReportMetadata(BaseModel):
+    type: str
+    name: str
+    description: str
+    filters: List[str]
+    endpoints: Dict[str, str]
+
+
+class ReportListResponse(BaseModel):
+    reports: List[ReportMetadata]
+
+
+class TicketReportResponse(BaseModel):
+    report_type: str
+    filters: ReportFilters
+    summary: TicketReportSummary
+
+
+class SLAReportResponse(BaseModel):
+    report_type: str
+    filters: ReportFilters
+    summary: SLAReportSummary
+
+
+class EscalationReportResponse(BaseModel):
+    report_type: str
+    filters: ReportFilters
+    summary: EscalationReportSummary
+
+
+class TechnicianReportResponse(BaseModel):
+    report_type: str
+    filters: ReportFilters
+    summary: TechnicianReportSummary

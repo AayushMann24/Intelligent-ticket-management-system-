@@ -9,6 +9,7 @@ import {
   Settings,
   LogOut,
   Menu,
+  FileText,
 } from "lucide-react";
 
 import {
@@ -53,6 +54,11 @@ export default function Sidebar() {
             title: "Analytics",
             path: "/analytics",
             icon: BarChart3,
+          },
+          {
+            title: "Reports",
+            path: "/reports",
+            icon: FileText,
           },
           {
             title: "Settings",
