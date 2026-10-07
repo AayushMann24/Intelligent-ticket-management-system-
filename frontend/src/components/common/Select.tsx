@@ -1,4 +1,5 @@
 import { forwardRef, type SelectHTMLAttributes } from "react";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
 
 interface SelectOption {
   value: string;
@@ -15,6 +16,7 @@ interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
   ({ label, error, placeholder, options, className = "", id, onValueChange, name, ...props }, ref) => {
+    const reducedMotion = useReducedMotion();
     const selectId = id || name;
 
     const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -26,6 +28,8 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         props.onChange(e);
       }
     };
+
+    const focusClass = reducedMotion ? "" : "focus:scale-[1.01]";
 
     return (
       <div className="w-full">
@@ -45,6 +49,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
             disabled:opacity-50 disabled:cursor-not-allowed
             ${error ? "border-red-500 focus:ring-red-500" : "border-slate-300 dark:border-slate-600"}
+            ${focusClass}
             ${className}
           `}
           aria-invalid={error ? "true" : "false"}

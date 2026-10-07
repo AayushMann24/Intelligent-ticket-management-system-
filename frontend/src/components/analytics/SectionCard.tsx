@@ -1,4 +1,6 @@
 import { forwardRef } from "react";
+import { motion } from "framer-motion";
+import { useTheme } from "../../context/useTheme";
 
 interface SectionCardProps {
   title: string;
@@ -8,10 +10,11 @@ interface SectionCardProps {
 
 const SectionCard = forwardRef<HTMLDivElement, SectionCardProps>(
   ({ title, children, className = "" }, ref) => {
-    const dark = true; // We'll determine this from theme context in practice
+    const { theme } = useTheme();
+    const dark = theme === "dark";
 
     return (
-      <div
+      <motion.div
         ref={ref}
         className={`
           rounded-2xl
@@ -21,17 +24,35 @@ const SectionCard = forwardRef<HTMLDivElement, SectionCardProps>(
           shadow-sm
           transition-all
           duration-300
-          ${dark ? "border-slate-800 bg-white dark:border-slate-800 dark:bg-slate-900" : "border-slate-200"}
+          ${dark ? "border-slate-800 dark:border-slate-800 dark:bg-slate-900" : "border-slate-200"}
           ${className}
         `}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: [0, 0, 0.2, 1] }}
       >
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+        <motion.div
+          className="mb-4 flex items-center justify-between"
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <motion.h2
+            className="text-xl font-semibold text-slate-900 dark:text-white"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
             {title}
-          </h2>
-        </div>
-        <div>{children}</div>
-      </div>
+          </motion.h2>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+        >
+          {children}
+        </motion.div>
+      </motion.div>
     );
   }
 );

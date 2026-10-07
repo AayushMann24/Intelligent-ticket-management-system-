@@ -1,11 +1,7 @@
-import {
-  CheckCircle2,
-  Clock3,
-  UserPlus,
-  AlertTriangle,
-} from "lucide-react";
-
+import { CheckCircle2, Clock3, UserPlus, AlertTriangle } from "lucide-react";
+import { motion } from "framer-motion";
 import { useTheme } from "../../context/useTheme";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
 
 interface Activity {
   message: string;
@@ -50,98 +46,97 @@ function getIcon(message: string) {
   };
 }
 
-export default function ActivityFeed({
-  activity,
-}: ActivityFeedProps) {
+const itemVariants = {
+  initial: { opacity: 0, x: -10, scale: 0.98 },
+  animate: { opacity: 1, x: 0, scale: 1 },
+  exit: { opacity: 0, x: 10, scale: 0.98 },
+  transition: { duration: 0.2, ease: [0, 0, 0.2, 1] },
+};
 
-  useTheme();
+const containerVariants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1, transition: { staggerChildren: 0.05, delayChildren: 0.1 } },
+  exit: { opacity: 0 },
+};
+
+export default function ActivityFeed({ activity }: ActivityFeedProps) {
+  const { theme } = useTheme();
+  const reducedMotion = useReducedMotion();
+  const dark = theme === "dark";
 
   return (
-    <div
-      className="
-        rounded-2xl
-        border
-        border-slate-200
-        bg-white
-        p-6
-        shadow-sm
-        transition-all
-        duration-300
-
-        dark:border-slate-800
-        dark:bg-slate-900
-      "
+    <motion.div
+      className="rounded-2xl border bg-white p-6 shadow-sm transition-all duration-300 dark:border-slate-800 dark:bg-slate-900"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: [0, 0, 0.2, 1] }}
     >
-
-      <h2 className="mb-6 text-xl font-semibold text-slate-900 dark:text-white">
+      <motion.h2
+        className="mb-6 text-xl font-semibold text-slate-900 dark:text-white"
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.2 }}
+      >
         Recent Activity
-      </h2>
+      </motion.h2>
 
       {activity.length === 0 ? (
-
-        <div className="flex h-60 items-center justify-center text-slate-500 dark:text-slate-400">
+        <motion.div
+          className="flex h-60 items-center justify-center text-slate-500 dark:text-slate-400"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+        >
           No recent activity.
-        </div>
-
+        </motion.div>
       ) : (
-
-        <div className="space-y-5">
-
+        <motion.div variants={containerVariants} initial="initial" animate="animate" exit="exit" className="space-y-5">
           {activity.map((item, index) => {
-
             const { Icon, color, bg } = getIcon(item.message);
 
             return (
-
-              <div
+              <motion.div
                 key={index}
-                className="
-                  flex
-                  items-start
-                  gap-4
-                  rounded-xl
-                  p-3
-                  transition-all
-                  duration-300
-
-                  hover:bg-slate-50
-                  dark:hover:bg-slate-800
-                "
+                className="flex items-start gap-4 rounded-xl p-3 transition-all duration-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                variants={itemVariants}
+                whileHover={reducedMotion ? {} : { x: 4, backgroundColor: dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.02)" }}
               >
-
-                <div
+                <motion.div
                   className={`rounded-full p-3 ${bg}`}
+                  initial={{ opacity: 0, scale: 0.8, rotate: -10 }}
+                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 25, delay: 0.1 }}
                 >
+                  <Icon size={18} className={color} />
+                </motion.div>
 
-                  <Icon
-                    size={18}
-                    className={color}
-                  />
-
-                </div>
-
-                <div className="flex-1">
-
-                  <p className="font-medium text-slate-900 dark:text-white">
+                <motion.div
+                  className="flex-1"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.2, delay: 0.05 }}
+                >
+                  <motion.p
+                    className="font-medium text-slate-900 dark:text-white"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
                     {item.message}
-                  </p>
-
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                  </motion.p>
+                  <motion.p
+                    className="mt-1 text-sm text-slate-500 dark:text-slate-400"
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2, delay: 0.1 }}
+                  >
                     {item.time}
-                  </p>
-
-                </div>
-
-              </div>
-
+                  </motion.p>
+                </motion.div>
+              </motion.div>
             );
-
           })}
-
-        </div>
-
+        </motion.div>
       )}
-
-    </div>
+    </motion.div>
   );
 }

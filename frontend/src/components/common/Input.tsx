@@ -1,4 +1,5 @@
 import { forwardRef, type InputHTMLAttributes } from "react";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -7,7 +8,10 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ label, error, className = "", id, ...props }, ref) => {
+    const reducedMotion = useReducedMotion();
     const inputId = id || props.name;
+
+    const focusClass = reducedMotion ? "" : "focus:scale-[1.01]";
 
     return (
       <div className="w-full">
@@ -28,6 +32,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
             disabled:opacity-50 disabled:cursor-not-allowed
             ${error ? "border-red-500 focus:ring-red-500" : "border-slate-300 dark:border-slate-600"}
+            ${focusClass}
             ${className}
           `}
           aria-invalid={error ? "true" : "false"}
