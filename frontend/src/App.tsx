@@ -12,6 +12,9 @@ import AssistantPage from "./pages/AssistantPage";
 import SettingsPage from "./pages/SettingsPage";
 import ProfilePage from "./pages/ProfilePage";
 import NotificationsCenterPage from "./pages/NotificationsCenterPage";
+import KnowledgeBasePage from "./pages/KnowledgeBasePage";
+import ArticleDetailPage from "./pages/ArticleDetailPage";
+import AdminKnowledgeManagementPage from "./pages/AdminKnowledgeManagementPage";
 
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute, PublicRoute } from "./components/auth/ProtectedRoute";
@@ -116,6 +119,30 @@ function App() {
           element={
             <ProtectedRoute>
               <NotificationsCenterPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/knowledge"
+          element={
+            <ProtectedRoute>
+              <KnowledgeBasePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/knowledge/:slug"
+          element={
+            <ProtectedRoute>
+              <ArticleDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/knowledge-management"
+          element={
+            <ProtectedRoute allowedRoles={["Admin"]}>
+              <AdminKnowledgeManagementPage />
             </ProtectedRoute>
           }
         />

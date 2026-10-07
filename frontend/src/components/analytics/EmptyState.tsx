@@ -1,5 +1,5 @@
 interface EmptyStateProps {
-  title: string;
+  title?: string;
   message: string;
   icon?: React.ReactNode;
   action?: React.ReactNode;

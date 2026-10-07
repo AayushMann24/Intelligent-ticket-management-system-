@@ -112,3 +112,12 @@ class User(Base):
         cascade="all, delete-orphan",
         lazy="dynamic",
     )
+
+    # Knowledge articles authored by this user
+    knowledge_articles = relationship(
+        "KnowledgeArticle",
+        foreign_keys="KnowledgeArticle.author_id",
+        back_populates="author",
+        cascade="all, delete-orphan",
+        lazy="dynamic",
+    )

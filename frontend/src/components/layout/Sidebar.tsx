@@ -11,6 +11,7 @@ import {
   LogOut,
   Menu,
   FileText,
+  BookOpen,
 } from "lucide-react";
 
 import {
@@ -34,6 +35,7 @@ export default function Sidebar() {
   const menuItems = [
     { title: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
     { title: "Tickets", path: "/tickets", icon: Ticket },
+    { title: "Knowledge Base", path: "/knowledge", icon: BookOpen },
     ...(role === "Admin"
       ? [
           { title: "Users", path: "/users", icon: Users },

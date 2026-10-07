@@ -102,6 +102,8 @@ pyasn1==0.6.4
 
 pydantic==2.13.4
 
+python-slugify==8.0.4
+
 pydantic-settings==2.14.2
 
 pydantic_core==2.46.4
