@@ -1,6 +1,6 @@
 from pydantic_settings import BaseSettings
 from pydantic import Field
-from typing import List
+from typing import List, Optional
 import os
 
 
@@ -70,6 +70,15 @@ class Settings(BaseSettings):
     ollama_base_url: str = Field(default="http://localhost:11434", description="Ollama base URL")
     chunk_size: int = Field(default=500, description="Text chunk size in characters")
     chunk_overlap: int = Field(default=100, description="Text chunk overlap in characters")
+
+    # AI Gateway / LLM (Phase 4)
+    ai_provider: str = Field(default="ollama", description="AI provider: gemini or ollama")
+    gemini_api_key: Optional[str] = Field(default=None, description="Gemini API key")
+    gemini_model: str = Field(default="gemini-1.5-flash", description="Gemini model name")
+    ollama_model: str = Field(default="llama3.2", description="Ollama model name")
+    ai_temperature: float = Field(default=0.0, description="AI sampling temperature")
+    ai_max_output_tokens: int = Field(default=4096, description="Max output tokens")
+    ai_timeout_seconds: int = Field(default=30, description="AI request timeout in seconds")
 
     class Config:
         env_file = ".env"
