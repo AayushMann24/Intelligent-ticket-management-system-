@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+    image: pgvector/pgvector:pg16
     container_name: itms_postgres
     restart: unless-stopped
     volumes:
@@ -9,6 +9,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
       interval: 10s
@@ -16,7 +18,7 @@ services:
       retries: 5
 
   db_test:
-    image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+    image: pgvector/pgvector:pg16
     container_name: itms_postgres_test
     restart: unless-stopped
     volumes:

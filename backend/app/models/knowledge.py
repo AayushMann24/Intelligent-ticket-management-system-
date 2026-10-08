@@ -102,6 +102,14 @@ class KnowledgeArticle(Base):
         back_populates="knowledge_articles",
     )
 
+    chunks = relationship(
+        "KnowledgeChunk",
+        foreign_keys="KnowledgeChunk.article_id",
+        back_populates="article",
+        cascade="all, delete-orphan",
+        lazy="dynamic",
+    )
+
     __table_args__ = (
         Index("ix_knowledge_status_category", "status", "category"),
         Index("ix_knowledge_deleted_created", "is_deleted", "created_at"),

@@ -63,6 +63,14 @@ class Settings(BaseSettings):
     hsts_include_subdomains: bool = Field(default=False, description="HSTS includeSubDomains")
     hsts_preload: bool = Field(default=False, description="HSTS preload")
 
+    # Embedding / RAG (Phase 3)
+    embedding_provider: str = Field(default="ollama", description="Embedding provider: ollama")
+    embedding_model: str = Field(default="nomic-embed-text", description="Embedding model name")
+    embedding_dimension: int = Field(default=768, description="Embedding vector dimension")
+    ollama_base_url: str = Field(default="http://localhost:11434", description="Ollama base URL")
+    chunk_size: int = Field(default=500, description="Text chunk size in characters")
+    chunk_overlap: int = Field(default=100, description="Text chunk overlap in characters")
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

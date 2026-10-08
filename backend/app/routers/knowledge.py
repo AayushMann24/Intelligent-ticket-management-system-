@@ -21,7 +21,11 @@ from app.services.knowledge_service import (
     delete_article,
     get_categories,
     get_article_by_slug,
+    get_article_by_id as get_article_by_id_service,
 )
+
+from app.services.ingestion import ingest_article, reingest_article, get_ingestion_status
+from app.services.retrieval import search_similar_chunks_pgvector, search_similar_chunks, hybrid_search
 
 from app.dependencies.roles import (
     require_admin,
@@ -240,3 +244,188 @@ def delete_knowledge_article(
         user_id=user["id"],
         user_role=user["role"],
     )
+
+
+# ======================================================
+# Ingestion Endpoints (Admin only)
+# ======================================================
+
+@router.post(
+    "/{article_id}/ingest",
+    response_model=dict,
+    dependencies=[Depends(csrf_protect)],
+)
+def ingest_knowledge_article(
+    article_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(require_admin),
+):
+    """Ingest a published article into the vector store."""
+    article = get_article_by_id_service(db=db, article_id=article_id, user_id=user["id"], user_role=user["role"])
+    return ingest_article(db=db, article=article)
+
+
+@router.post(
+    "/{article_id}/reingest",
+    response_model=dict,
+    dependencies=[Depends(csrf_protect)],
+)
+def reingest_knowledge_article(
+    article_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(require_admin),
+):
+    """Force re-ingestion of an article (replace all chunks)."""
+    article = get_article_by_id_service(db=db, article_id=article_id, user_id=user["id"], user_role=user["role"])
+    return reingest_article(db=db, article=article)
+
+
+@router.get(
+    "/{article_id}/ingestion-status",
+    response_model=dict,
+)
+def get_knowledge_article_ingestion_status(
+    article_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(require_admin),
+):
+    """Get ingestion status for an article."""
+    # Verify article exists and user has access
+    get_article_by_id_service(db=db, article_id=article_id, user_id=user["id"], user_role=user["role"])
+    return get_ingestion_status(db=db, article_id=article_id)
+
+
+# ======================================================
+# Semantic Search Endpoints
+# ======================================================
+
+@router.post(
+    "/search/semantic",
+    response_model=list[dict],
+)
+def semantic_search_knowledge(
+    query: str,
+    top_k: int = 5,
+    db: Session = Depends(get_db),
+    user=Depends(require_authenticated_user),
+):
+    """
+    Perform semantic search on knowledge base articles.
+
+    Args:
+        query: Search query text
+        top_k: Number of results to return (max 50)
+
+    Returns:
+        List of matching chunks with similarity scores and article metadata
+    """
+    if top_k > 50:
+        top_k = 50
+
+    try:
+        results = search_similar_chunks_pgvector(
+            db=db,
+            query=query,
+            top_k=top_k,
+            user_role=user["role"],
+        )
+        return [
+            {
+                "chunk_id": r.chunk_id,
+                "article_id": r.article_id,
+                "chunk_index": r.chunk_index,
+                "content": r.content,
+                "similarity": r.similarity,
+                "article_title": r.article_title,
+                "article_category": r.article_category,
+                "article_slug": r.article_slug,
+                "article_status": r.article_status,
+            }
+            for r in results
+        ]
+    except Exception as e:
+        # Fallback to in-memory similarity if pgvector fails
+        results = search_similar_chunks(
+            db=db,
+            query=query,
+            top_k=top_k,
+            user_role=user["role"],
+        )
+        return [
+            {
+                "chunk_id": r.chunk_id,
+                "article_id": r.article_id,
+                "chunk_index": r.chunk_index,
+                "content": r.content,
+                "similarity": r.similarity,
+                "article_title": r.article_title,
+                "article_category": r.article_category,
+                "article_slug": r.article_slug,
+                "article_status": r.article_status,
+            }
+            for r in results
+        ]
+
+
+@router.post(
+    "/search/hybrid",
+    response_model=list[dict],
+)
+def hybrid_search_knowledge(
+    query: str,
+    top_k: int = 5,
+    keyword_weight: float = 0.5,
+    semantic_weight: float = 0.5,
+    db: Session = Depends(get_db),
+    user=Depends(require_authenticated_user),
+):
+    """
+    Perform hybrid search combining keyword and semantic search.
+
+    Args:
+        query: Search query text
+        top_k: Number of results to return (max 50)
+        keyword_weight: Weight for keyword search (0-1)
+        semantic_weight: Weight for semantic search (0-1)
+
+    Returns:
+        List of matching results with combined scores
+    """
+    if top_k > 50:
+        top_k = 50
+
+    # Normalize weights
+    total_weight = keyword_weight + semantic_weight
+    if total_weight == 0:
+        keyword_weight = 0.5
+        semantic_weight = 0.5
+    else:
+        keyword_weight = keyword_weight / total_weight
+        semantic_weight = semantic_weight / total_weight
+
+    try:
+        results = hybrid_search(
+            db=db,
+            query=query,
+            top_k=top_k,
+            user_role=user["role"],
+            keyword_weight=keyword_weight,
+            semantic_weight=semantic_weight,
+        )
+        return [
+            {
+                "chunk_id": r.chunk_id,
+                "article_id": r.article_id,
+                "chunk_index": r.chunk_index,
+                "content": r.content,
+                "similarity": r.similarity,
+                "article_title": r.article_title,
+                "article_category": r.article_category,
+                "article_slug": r.article_slug,
+                "article_status": r.article_status,
+            }
+            for r in results
+        ]
+    except Exception:
+        # Fallback to semantic only
+        return semantic_search_knowledge(query=query, top_k=top_k, db=db, user=user)
