@@ -6,8 +6,6 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
-    ARRAY,
-    Float,
 )
 from sqlalchemy.orm import relationship
 from pgvector.sqlalchemy import Vector
@@ -31,7 +29,9 @@ class KnowledgeChunk(Base):
 
     content = Column(Text, nullable=False)
 
-    embedding = Column(Vector(768), nullable=True)
+    # Use embedding_vector column which is the pgvector type
+    # The embedding column is a legacy float[] array for compatibility
+    embedding = Column("embedding_vector", Vector(768), nullable=True)
 
     created_at = Column(
         DateTime(timezone=True),

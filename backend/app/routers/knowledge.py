@@ -10,6 +10,12 @@ from app.schemas.knowledge import (
     ArticleListResponse,
     PaginationParams,
 )
+from app.schemas.retrieval import (
+    RetrievalResult,
+    RetrievalResponse,
+    HybridSearchParams,
+    SemanticSearchParams,
+)
 
 from app.services.knowledge_service import (
     create_article,
@@ -25,7 +31,14 @@ from app.services.knowledge_service import (
 )
 
 from app.services.ingestion import ingest_article, reingest_article, get_ingestion_status
-from app.services.retrieval import search_similar_chunks_pgvector, search_similar_chunks, hybrid_search
+from app.services.retrieval import (
+    search_similar_chunks_pgvector,
+    search_similar_chunks,
+    hybrid_search,
+    search_keyword_chunks,
+    build_context,
+    retrieve_and_build_context,
+)
 
 from app.dependencies.roles import (
     require_admin,
@@ -33,6 +46,7 @@ from app.dependencies.roles import (
     require_authenticated_user,
 )
 from app.dependencies.csrf import csrf_protect
+from app.models.knowledge import ArticleCategory
 
 router = APIRouter(
     prefix="/knowledge",
@@ -301,11 +315,10 @@ def get_knowledge_article_ingestion_status(
 
 @router.post(
     "/search/semantic",
-    response_model=list[dict],
+    response_model=RetrievalResponse,
 )
 def semantic_search_knowledge(
-    query: str,
-    top_k: int = 5,
+    params: SemanticSearchParams,
     db: Session = Depends(get_db),
     user=Depends(require_authenticated_user),
 ):
@@ -313,69 +326,45 @@ def semantic_search_knowledge(
     Perform semantic search on knowledge base articles.
 
     Args:
-        query: Search query text
-        top_k: Number of results to return (max 50)
+        params: Search parameters including query, top_k, and optional category filter
 
     Returns:
-        List of matching chunks with similarity scores and article metadata
+        Structured retrieval response with citation-ready results
     """
-    if top_k > 50:
-        top_k = 50
+    top_k = min(params.top_k, 50)
 
     try:
         results = search_similar_chunks_pgvector(
             db=db,
-            query=query,
+            query=params.query,
             top_k=top_k,
             user_role=user["role"],
+            category=params.category,
         )
-        return [
-            {
-                "chunk_id": r.chunk_id,
-                "article_id": r.article_id,
-                "chunk_index": r.chunk_index,
-                "content": r.content,
-                "similarity": r.similarity,
-                "article_title": r.article_title,
-                "article_category": r.article_category,
-                "article_slug": r.article_slug,
-                "article_status": r.article_status,
-            }
-            for r in results
-        ]
     except Exception as e:
         # Fallback to in-memory similarity if pgvector fails
         results = search_similar_chunks(
             db=db,
-            query=query,
+            query=params.query,
             top_k=top_k,
             user_role=user["role"],
+            category=params.category,
         )
-        return [
-            {
-                "chunk_id": r.chunk_id,
-                "article_id": r.article_id,
-                "chunk_index": r.chunk_index,
-                "content": r.content,
-                "similarity": r.similarity,
-                "article_title": r.article_title,
-                "article_category": r.article_category,
-                "article_slug": r.article_slug,
-                "article_status": r.article_status,
-            }
-            for r in results
-        ]
+
+    return RetrievalResponse(
+        results=results,
+        total_results=len(results),
+        query=params.query,
+        top_k=top_k,
+    )
 
 
 @router.post(
     "/search/hybrid",
-    response_model=list[dict],
+    response_model=RetrievalResponse,
 )
 def hybrid_search_knowledge(
-    query: str,
-    top_k: int = 5,
-    keyword_weight: float = 0.5,
-    semantic_weight: float = 0.5,
+    params: HybridSearchParams,
     db: Session = Depends(get_db),
     user=Depends(require_authenticated_user),
 ):
@@ -383,49 +372,45 @@ def hybrid_search_knowledge(
     Perform hybrid search combining keyword and semantic search.
 
     Args:
-        query: Search query text
-        top_k: Number of results to return (max 50)
-        keyword_weight: Weight for keyword search (0-1)
-        semantic_weight: Weight for semantic search (0-1)
+        params: Search parameters including query, top_k, weights, and optional category filter
 
     Returns:
-        List of matching results with combined scores
+        Structured retrieval response with combined scores and citation metadata
     """
-    if top_k > 50:
-        top_k = 50
+    top_k = min(params.top_k, 50)
 
     # Normalize weights
-    total_weight = keyword_weight + semantic_weight
+    total_weight = params.keyword_weight + params.semantic_weight
     if total_weight == 0:
         keyword_weight = 0.5
         semantic_weight = 0.5
     else:
-        keyword_weight = keyword_weight / total_weight
-        semantic_weight = semantic_weight / total_weight
+        keyword_weight = params.keyword_weight / total_weight
+        semantic_weight = params.semantic_weight / total_weight
 
     try:
         results = hybrid_search(
             db=db,
-            query=query,
+            query=params.query,
             top_k=top_k,
             user_role=user["role"],
             keyword_weight=keyword_weight,
             semantic_weight=semantic_weight,
+            category=params.category,
         )
-        return [
-            {
-                "chunk_id": r.chunk_id,
-                "article_id": r.article_id,
-                "chunk_index": r.chunk_index,
-                "content": r.content,
-                "similarity": r.similarity,
-                "article_title": r.article_title,
-                "article_category": r.article_category,
-                "article_slug": r.article_slug,
-                "article_status": r.article_status,
-            }
-            for r in results
-        ]
     except Exception:
         # Fallback to semantic only
-        return semantic_search_knowledge(query=query, top_k=top_k, db=db, user=user)
+        results = search_similar_chunks_pgvector(
+            db=db,
+            query=params.query,
+            top_k=top_k,
+            user_role=user["role"],
+            category=params.category,
+        )
+
+    return RetrievalResponse(
+        results=results,
+        total_results=len(results),
+        query=params.query,
+        top_k=top_k,
+    )
