@@ -18,11 +18,8 @@ from app.routers import notification
 from app.routers import analytics
 from app.routers import reports
 from app.routers import knowledge
-#from app.routers import ai
+from app.routers import assistant
 from app.routers.dashboard import router as dashboard_router
-# AI routers - commented out for testing without langchain dependencies
-# from app.routers import assistant
-# from app.routers import ai
 from app.config import settings
 from sqlalchemy import text
 from app.database.connection import SessionLocal
@@ -74,9 +71,8 @@ app.include_router(notification.router)
 app.include_router(analytics.router)
 app.include_router(reports.router)
 app.include_router(knowledge.router)
-#app.include_router(ai.router)
+app.include_router(assistant.router)
 app.include_router(dashboard_router)
-# app.include_router(assistant.router)
 
 
 @app.get("/")
