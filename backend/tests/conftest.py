@@ -1,6 +1,6 @@
 import os
 import pytest
-from unittest.mock import patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from sqlalchemy import create_engine, event, inspect, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
@@ -182,6 +182,36 @@ def reset_rate_limiter():
     yield
     import asyncio
     asyncio.run(rate_limiter.reset_all())
+
+
+@pytest.fixture(scope="session", autouse=True)
+def mock_ollama_client():
+    """
+    Globally mock langchain_ollama.ChatOllama to prevent any test from
+    accidentally connecting to a real Ollama server.
+
+    This ensures complete test isolation for Ollama - no network calls,
+    no requirement for Ollama to be running, and no dependence on local models.
+
+    The mock provides a realistic interface that matches ChatOllama's behavior
+    for the methods used in our codebase (invoke, etc.).
+    """
+    def create_mock_llm():
+        mock_llm = MagicMock()
+        # Mock invoke to return a response with content attribute
+        mock_response = MagicMock()
+        mock_response.content = "Mocked Ollama response"
+        mock_response.usage_metadata = {"input_tokens": 10, "output_tokens": 20, "total_tokens": 30}
+        mock_llm.invoke.return_value = mock_response
+        # Mock ainvoke for async usage
+        mock_llm.ainvoke = AsyncMock(return_value=mock_response)
+        # Mock stream for streaming usage
+        mock_llm.stream.return_value = iter([mock_response])
+        mock_llm.astream = AsyncMock(return_value=iter([mock_response]))
+        return mock_llm
+
+    with patch("langchain_ollama.ChatOllama", side_effect=create_mock_llm):
+        yield
 
 
 @pytest.fixture(scope="function", autouse=True)
