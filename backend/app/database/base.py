@@ -5,3 +5,4 @@ from app.models.user import User
 from app.models.ticket import Ticket
 from app.models.refresh_token import RefreshToken
 from app.models.ticket_comment import TicketComment, TicketHistory, TicketAttachment
+from app.models.conversation import Conversation, Message

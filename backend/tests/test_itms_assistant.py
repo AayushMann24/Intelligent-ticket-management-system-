@@ -393,6 +393,8 @@ class TestAskAssistantConvenience:
                 question="Test question",
                 user_role="Employee",
                 provider_override=None,
+                ticket_id=None,
+                conversation_id=None,
             )
 
 

@@ -121,3 +121,12 @@ class User(Base):
         cascade="all, delete-orphan",
         lazy="dynamic",
     )
+
+    # Conversations started by this user
+    conversations = relationship(
+        "Conversation",
+        foreign_keys="Conversation.owner_id",
+        back_populates="owner",
+        cascade="all, delete-orphan",
+        lazy="select",
+    )
