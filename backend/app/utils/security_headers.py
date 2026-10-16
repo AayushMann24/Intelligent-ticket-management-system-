@@ -62,19 +62,25 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
     def _get_csp_for_path(self, path: str) -> str:
         """Get CSP policy for a specific path.
-        
+
         Swagger UI at /docs and /redoc requires 'unsafe-inline' for scripts and styles
         because it uses inline scripts/styles from the bundled Swagger UI.
+        It also loads assets from cdn.jsdelivr.net.
+        
+        ReDoc additionally loads:
+        - Google Fonts CSS from fonts.googleapis.com (style-src)
+        - Google Fonts files from fonts.gstatic.com (font-src)
+        - Favicon from fastapi.tiangolo.com (img-src)
         """
         if path.startswith("/docs") or path.startswith("/redoc") or path.startswith("/openapi.json"):
-            # Swagger UI needs inline scripts and styles
-            # We allow 'unsafe-inline' only for these documentation endpoints
+            # Swagger UI needs inline scripts and styles, plus CDN assets
+            # We allow 'unsafe-inline' and the specific CDN only for these documentation endpoints
             return (
                 "default-src 'self'; "
-                "script-src 'self' 'unsafe-inline'; "
-                "style-src 'self' 'unsafe-inline'; "
-                "img-src 'self' data:; "
-                "font-src 'self'; "
+                "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+                "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+                "img-src 'self' data: https://fastapi.tiangolo.com; "
+                "font-src 'self' https://fonts.gstatic.com; "
                 "connect-src 'self'; "
                 "object-src 'none'; "
                 "base-uri 'self'; "
