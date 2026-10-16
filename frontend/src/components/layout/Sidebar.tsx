@@ -28,7 +28,9 @@ export default function Sidebar() {
   const { user, logout } = useAuth();
   const reducedMotion = useReducedMotion();
 
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(
+    () => typeof window !== "undefined" && window.innerWidth < 1024
+  );
 
   const role = user?.role;
 
@@ -59,8 +61,9 @@ export default function Sidebar() {
   return (
     <motion.aside
       className={`
-        flex h-screen flex-col border-r border-slate-200 bg-white
-        dark:border-slate-800 dark:bg-slate-950
+        flex h-screen flex-col border-r border-slate-200 bg-white/80
+        backdrop-blur-xl
+        dark:border-slate-800 dark:bg-slate-950/70
       `}
       animate={{ width: collapsed ? "5rem" : "16rem" }}
       transition={sidebarTransition}

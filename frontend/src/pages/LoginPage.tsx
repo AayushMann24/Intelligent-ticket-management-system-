@@ -5,6 +5,7 @@ import { Eye, EyeOff, Mail, Lock, ShieldCheck, ArrowLeft } from "lucide-react";
 
 import { useAuth } from "../context/useAuth";
 import { useReducedMotion } from "../hooks/useReducedMotion";
+import AnimatedBackground from "../components/common/AnimatedBackground";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -48,13 +49,20 @@ export default function LoginPage() {
   };
 
   return (
-    <motion.div className="min-h-screen bg-slate-950" initial="initial" animate="animate" variants={containerVariants}>
+    <motion.div
+      className="relative min-h-screen overflow-hidden bg-[#05070f]"
+      initial="initial"
+      animate="animate"
+      variants={containerVariants}
+    >
+      <AnimatedBackground variant="public" />
+
       {/* Back Button */}
       <motion.div className="p-6" variants={itemVariants}>
         <motion.button
           type="button"
           onClick={() => navigate("/")}
-          className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-slate-300 transition-colors hover:bg-slate-800 hover:text-white"
+          className="itms-glass flex items-center gap-2 rounded-lg px-4 py-2 text-slate-300 transition-colors hover:border-cyan-400/40 hover:text-white"
           whileHover={reducedMotion ? {} : { x: -4 }}
           whileTap={reducedMotion ? {} : { scale: 0.98 }}
         >
@@ -64,10 +72,10 @@ export default function LoginPage() {
       </motion.div>
 
       {/* Login Card */}
-      <motion.div className="flex items-center justify-center px-6 pb-10" variants={itemVariants}>
+      <motion.div className="relative z-10 flex items-center justify-center px-6 pb-10" variants={itemVariants}>
         <motion.form
           onSubmit={handleLogin}
-          className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-2xl"
+          className="itms-glass-strong w-full max-w-md rounded-2xl p-8 shadow-2xl"
           variants={containerVariants}
           initial="initial"
           animate="animate"
@@ -212,7 +220,7 @@ export default function LoginPage() {
           <motion.button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-blue-600 py-3 font-semibold text-white transition-all duration-300 hover:bg-blue-700 disabled:bg-slate-700 disabled:cursor-not-allowed"
+            className="w-full rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 py-3 font-semibold text-white shadow-lg shadow-cyan-500/20 transition-shadow duration-300 hover:shadow-cyan-400/40 disabled:bg-slate-700 disabled:bg-none disabled:shadow-none disabled:cursor-not-allowed"
             whileHover={reducedMotion || loading ? {} : { scale: 1.02 }}
             whileTap={reducedMotion || loading ? {} : { scale: 0.98 }}
             variants={itemVariants}

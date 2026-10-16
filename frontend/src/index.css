@@ -3,6 +3,13 @@
 /* Tell Tailwind that the "dark" variant is controlled by the .dark class */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* =========================================================
+   ITMS Design System
+   Premium dark, atmospheric visual language.
+   All decorative animation is transform/opacity based and is
+   gated behind prefers-reduced-motion (see bottom of file).
+   ========================================================= */
+
 html,
 body,
 #root {
@@ -12,13 +19,326 @@ body,
   padding: 0;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
 body {
-  font-family: Inter, system-ui, sans-serif;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
   transition:
     background-color 0.25s ease,
     color 0.25s ease;
+  /* Prevent atmospheric layers from creating horizontal scroll. */
+  overflow-x: hidden;
 }
 
 * {
   box-sizing: border-box;
+}
+
+::selection {
+  background: rgba(56, 189, 248, 0.32);
+  color: #f8fafc;
+}
+
+/* ---------------------------------------------------------
+   Animated atmospheric background
+   --------------------------------------------------------- */
+
+.itms-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(1150px 760px at 12% -12%, rgba(37, 99, 235, 0.22), transparent 62%),
+    radial-gradient(980px 680px at 102% -4%, rgba(139, 92, 246, 0.18), transparent 58%),
+    radial-gradient(900px 640px at 50% 118%, rgba(6, 182, 212, 0.16), transparent 60%),
+    linear-gradient(180deg, #05070f 0%, #070b18 52%, #05070f 100%);
+}
+
+/* Softer, theme-aware variant used behind the authenticated app shell. */
+.itms-bg--app {
+  background:
+    radial-gradient(900px 620px at 8% -10%, rgba(37, 99, 235, 0.12), transparent 62%),
+    radial-gradient(820px 560px at 100% 0%, rgba(139, 92, 246, 0.1), transparent 58%),
+    linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+}
+
+.dark .itms-bg--app {
+  background:
+    radial-gradient(900px 620px at 8% -10%, rgba(37, 99, 235, 0.2), transparent 62%),
+    radial-gradient(860px 580px at 102% 0%, rgba(139, 92, 246, 0.16), transparent 58%),
+    radial-gradient(760px 520px at 50% 120%, rgba(6, 182, 212, 0.12), transparent 60%),
+    linear-gradient(180deg, #05070f 0%, #070b18 55%, #05070f 100%);
+}
+
+/* Aurora sweep layer. */
+.itms-aurora {
+  position: absolute;
+  inset: -30%;
+  background:
+    conic-gradient(from 120deg at 30% 30%, rgba(56, 189, 248, 0.12), transparent 40%),
+    conic-gradient(from 300deg at 75% 65%, rgba(168, 85, 247, 0.14), transparent 42%);
+  filter: blur(30px);
+  opacity: 0.7;
+  will-change: transform;
+}
+
+/* Glowing floating orbs. */
+.itms-orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(84px);
+  will-change: transform, opacity;
+  opacity: 0.75;
+}
+
+.itms-orb--cyan {
+  width: 34rem;
+  height: 34rem;
+  top: -9rem;
+  left: -8rem;
+  background: radial-gradient(circle at 32% 32%, rgba(34, 211, 238, 0.62), rgba(34, 211, 238, 0) 70%);
+}
+
+.itms-orb--violet {
+  width: 40rem;
+  height: 40rem;
+  top: 14%;
+  right: -12rem;
+  background: radial-gradient(circle at 60% 40%, rgba(139, 92, 246, 0.55), rgba(139, 92, 246, 0) 70%);
+}
+
+.itms-orb--blue {
+  width: 32rem;
+  height: 32rem;
+  bottom: -10rem;
+  left: 24%;
+  background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.5), rgba(59, 130, 246, 0) 70%);
+}
+
+.itms-orb--fuchsia {
+  width: 24rem;
+  height: 24rem;
+  bottom: 6%;
+  right: 14%;
+  background: radial-gradient(circle at 50% 50%, rgba(217, 70, 239, 0.4), rgba(217, 70, 239, 0) 70%);
+}
+
+/* Subtle technical grid + vignette overlays. */
+.itms-grid-overlay {
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  background-image:
+    linear-gradient(to right, rgba(148, 163, 184, 0.4) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(148, 163, 184, 0.4) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(circle at 50% 30%, black, transparent 78%);
+  -webkit-mask-image: radial-gradient(circle at 50% 30%, black, transparent 78%);
+}
+
+.itms-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(2, 4, 10, 0.55) 100%);
+}
+
+/* ---------------------------------------------------------
+   Surfaces & text treatments
+   --------------------------------------------------------- */
+
+.itms-glass {
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.itms-glass-strong {
+  background: rgba(10, 15, 28, 0.78);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.itms-text-gradient {
+  background-image: linear-gradient(100deg, #e2e8f0 0%, #38bdf8 42%, #a78bfa 78%, #e2e8f0 100%);
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Glow that follows hover on cards without extra JS. */
+.itms-card-glow {
+  position: relative;
+  transition:
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.35s ease,
+    box-shadow 0.35s ease;
+}
+
+.itms-card-glow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.5), rgba(168, 85, 247, 0.35), transparent 70%);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+
+.itms-card-glow:hover {
+  transform: translateY(-6px);
+}
+
+.itms-card-glow:hover::after {
+  opacity: 1;
+}
+
+.itms-shimmer {
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.12) 25%, rgba(148, 163, 184, 0.28) 50%, rgba(148, 163, 184, 0.12) 75%);
+  background-size: 200% 100%;
+}
+
+/* ---------------------------------------------------------
+   Keyframes
+   --------------------------------------------------------- */
+
+@keyframes itms-aurora-shift {
+  0% {
+    transform: translate3d(-4%, -2%, 0) rotate(0deg) scale(1);
+  }
+  50% {
+    transform: translate3d(4%, 3%, 0) rotate(8deg) scale(1.12);
+  }
+  100% {
+    transform: translate3d(-4%, -2%, 0) rotate(0deg) scale(1);
+  }
+}
+
+@keyframes itms-orb-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -44px, 0) scale(1.08);
+  }
+}
+
+@keyframes itms-orb-float-rev {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1.05);
+  }
+  50% {
+    transform: translate3d(0, 34px, 0) scale(1);
+  }
+}
+
+@keyframes itms-orb-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+@keyframes itms-gradient-pan {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+@keyframes itms-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes itms-scroll-hint {
+  0% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translateY(7px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+}
+
+/* ---------------------------------------------------------
+   Motion (only when the user allows it)
+   --------------------------------------------------------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  .itms-motion .itms-aurora {
+    animation: itms-aurora-shift 26s ease-in-out infinite;
+  }
+
+  .itms-motion .itms-orb--cyan {
+    animation: itms-orb-float 18s ease-in-out infinite, itms-orb-pulse 11s ease-in-out infinite;
+  }
+
+  .itms-motion .itms-orb--violet {
+    animation: itms-orb-float-rev 22s ease-in-out infinite, itms-orb-pulse 14s ease-in-out infinite;
+  }
+
+  .itms-motion .itms-orb--blue {
+    animation: itms-orb-float 20s ease-in-out infinite 1.5s, itms-orb-pulse 13s ease-in-out infinite;
+  }
+
+  .itms-motion .itms-orb--fuchsia {
+    animation: itms-orb-float-rev 16s ease-in-out infinite 0.8s, itms-orb-pulse 9s ease-in-out infinite;
+  }
+
+  .itms-motion .itms-text-gradient {
+    animation: itms-gradient-pan 8s linear infinite alternate;
+  }
+
+  .itms-motion .itms-shimmer {
+    animation: itms-shimmer 2.4s ease-in-out infinite;
+  }
+
+  .itms-motion .itms-scroll-hint {
+    animation: itms-scroll-hint 2.2s ease-in-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }

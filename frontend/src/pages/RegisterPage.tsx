@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
 import {
   User,
@@ -13,10 +14,13 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "../context/useAuth";
+import { useReducedMotion } from "../hooks/useReducedMotion";
+import AnimatedBackground from "../components/common/AnimatedBackground";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
   const { register } = useAuth();
+  const reducedMotion = useReducedMotion();
 
   const [form, setForm] = useState({
     name: "",
@@ -73,30 +77,40 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="relative min-h-screen overflow-hidden bg-[#05070f]">
+
+      <AnimatedBackground variant="public" />
 
       {/* Back Button */}
 
-      <div className="p-6">
+      <div className="relative z-10 p-6">
 
-        <button
+        <motion.button
           type="button"
           onClick={() => navigate("/")}
-          className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-slate-300 transition hover:bg-slate-800 hover:text-white"
+          initial={reducedMotion ? undefined : { opacity: 0, x: -12 }}
+          animate={reducedMotion ? undefined : { opacity: 1, x: 0 }}
+          whileHover={reducedMotion ? {} : { x: -4 }}
+          whileTap={reducedMotion ? {} : { scale: 0.98 }}
+          transition={{ duration: 0.3 }}
+          className="itms-glass flex items-center gap-2 rounded-lg px-4 py-2 text-slate-300 transition-colors hover:border-cyan-400/40 hover:text-white"
         >
           <ArrowLeft size={18} />
           Back to Home
-        </button>
+        </motion.button>
 
       </div>
 
       {/* Register Card */}
 
-      <div className="flex items-center justify-center px-6 pb-10">
+      <div className="relative z-10 flex items-center justify-center px-6 pb-10">
 
-        <form
+        <motion.form
           onSubmit={handleRegister}
-          className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-2xl"
+          initial={reducedMotion ? undefined : { opacity: 0, y: 24 }}
+          animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="itms-glass-strong w-full max-w-md rounded-2xl p-8 shadow-2xl"
         >
 
           {/* Header */}
@@ -232,15 +246,17 @@ export default function RegisterPage() {
 
           {/* Register */}
 
-          <button
+          <motion.button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-blue-600 py-3 font-semibold text-white transition duration-300 hover:scale-[1.02] hover:bg-blue-700 disabled:bg-slate-700"
+            whileHover={reducedMotion || loading ? {} : { scale: 1.02 }}
+            whileTap={reducedMotion || loading ? {} : { scale: 0.98 }}
+            className="w-full rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 py-3 font-semibold text-white shadow-lg shadow-cyan-500/20 transition-shadow duration-300 hover:shadow-cyan-400/40 disabled:bg-slate-700 disabled:bg-none disabled:shadow-none"
           >
             {loading
               ? "Creating Account..."
               : "Register"}
-          </button>
+          </motion.button>
 
           {/* Login */}
 
@@ -257,7 +273,7 @@ export default function RegisterPage() {
 
           </p>
 
-        </form>
+        </motion.form>
 
       </div>
 

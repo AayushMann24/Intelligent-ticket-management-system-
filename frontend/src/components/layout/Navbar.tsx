@@ -58,7 +58,7 @@ export default function Navbar() {
   }, []);
 
   return (
-    <header className="flex h-16 w-full items-center justify-between border-b border-slate-300 bg-white px-6 transition-colors dark:border-slate-700 dark:bg-slate-900">
+    <header className="flex h-16 w-full items-center justify-between border-b border-slate-300 bg-white/80 px-6 backdrop-blur-xl transition-colors dark:border-slate-700 dark:bg-slate-900/70">
       {/* Left Section */}
       <div className="flex items-center gap-8">
         <motion.h1
@@ -72,7 +72,7 @@ export default function Navbar() {
 
         {/* Search */}
         <motion.div
-          className="relative"
+          className="relative hidden md:block"
           initial={{ opacity: 0, width: 0 }}
           animate={{ opacity: 1, width: "20rem" }}
           transition={{ duration: 0.3, delay: 0.2, ease: [0, 0, 0.2, 1] }}
