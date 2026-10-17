@@ -587,3 +587,124 @@ def delete_escalation_rule(db: Session, rule_id: int) -> bool:
     rule.updated_at = datetime.now(timezone.utc)
     db.commit()
     return True
+
+
+# ==========================================
+# Escalation Record Listing (Admin)
+# ==========================================
+
+def list_escalation_records(
+    db: Session,
+    page: int = 1,
+    page_size: int = 20,
+    event_type: Optional[EscalationEventType] = None,
+    ticket_id: Optional[int] = None,
+    rule_id: Optional[int] = None,
+    email_sent: Optional[bool] = None,
+) -> dict:
+    """
+    List escalation records with pagination and optional filters.
+
+    Read-only: used by the admin escalation-records endpoint to surface
+    escalation history and email delivery status.
+    """
+    query = db.query(EscalationRecord)
+
+    if event_type is not None:
+        query = query.filter(EscalationRecord.event_type == event_type)
+    if ticket_id is not None:
+        query = query.filter(EscalationRecord.ticket_id == ticket_id)
+    if rule_id is not None:
+        query = query.filter(EscalationRecord.rule_id == rule_id)
+    if email_sent is not None:
+        query = query.filter(EscalationRecord.email_sent == email_sent)
+
+    total = query.count()
+
+    query = query.order_by(desc(EscalationRecord.created_at), desc(EscalationRecord.id))
+    offset = (page - 1) * page_size
+    records = query.offset(offset).limit(page_size).all()
+
+    total_pages = (total + page_size - 1) // page_size
+
+    return {
+        "items": records,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages,
+    }
+
+
+def get_escalation_record(db: Session, record_id: int) -> Optional[EscalationRecord]:
+    """Get a single escalation record by ID."""
+    return db.query(EscalationRecord).filter(EscalationRecord.id == record_id).first()
+
+
+# ==========================================
+# Serialization for API Responses
+# ==========================================
+
+def get_delivery_status(record: EscalationRecord) -> str:
+    """
+    Derive a human-readable email delivery status for a record.
+
+    "delivered" is only returned when the provider confirmed success
+    (email_sent is True). Failures surface "failed"; records where no email
+    attempt was made (e.g. rule disabled email) surface "not_attempted".
+    """
+    if record.email_sent:
+        return "delivered"
+    if record.email_error:
+        return "failed"
+    return "not_attempted"
+
+
+def serialize_escalation_rule(rule: EscalationRule) -> dict:
+    """Serialize an escalation rule for API response."""
+    return {
+        "id": rule.id,
+        "name": rule.name,
+        "description": rule.description,
+        "event_type": rule.event_type,
+        "priority": rule.priority,
+        "ticket_type": rule.ticket_type,
+        "category": rule.category,
+        "target_role": rule.target_role,
+        "notify_enabled": rule.notify_enabled,
+        "email_enabled": rule.email_enabled,
+        "is_active": rule.is_active,
+        "precedence": rule.precedence,
+        "created_at": rule.created_at,
+        "updated_at": rule.updated_at,
+    }
+
+
+def serialize_escalation_record(record: EscalationRecord) -> dict:
+    """
+    Serialize an escalation record for API response, including joined context
+    (ticket title, recipient, rule name) and derived delivery status.
+    """
+    ticket = record.ticket
+    recipient = record.recipient
+    rule = record.rule
+
+    return {
+        "id": record.id,
+        "ticket_id": record.ticket_id,
+        "event_type": record.event_type,
+        "rule_id": record.rule_id,
+        "recipient_id": record.recipient_id,
+        "notification_created": record.notification_created,
+        "notification_id": record.notification_id,
+        "email_sent": record.email_sent,
+        "email_error": record.email_error,
+        "delivery_status": get_delivery_status(record),
+        "history_recorded": record.history_recorded,
+        "ticket_title": ticket.title if ticket else None,
+        "recipient_name": recipient.name if recipient else None,
+        "recipient_role": recipient.role if recipient else None,
+        "rule_name": rule.name if rule else None,
+        "created_at": record.created_at,
+        "updated_at": record.updated_at,
+    }

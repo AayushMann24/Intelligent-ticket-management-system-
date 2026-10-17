@@ -46,7 +46,16 @@ cd backend
 python -m pytest tests/ -v --tb=short
 ```
 
-**Expected result**: 103 tests passing.
+**Expected result**: 305 tests passing.
+
+To run the escalation-administration tests only:
+
+```bash
+cd backend
+python -m pytest tests/test_escalation.py -v
+```
+
+**Expected result**: 39 tests passing.
 
 ### 3. Run Frontend Tests
 
@@ -81,9 +90,9 @@ npm run build
 - **`backend/tests/conftest.py`**: Pytest configuration that:
   1. Sets test environment variables before importing app modules
   2. Creates a PostgreSQL SQLAlchemy engine pointing to `localhost:5433`
-  3. **Initializes the test database once per session**:
-     - Creates all tables from SQLAlchemy models (`Base.metadata.create_all()`)
-     - Stamps Alembic to the head revision (`phase2c2_sla_breach_events`)
+  3. **Initializes the test database once per session** by running the full
+     Alembic migration chain (`alembic upgrade head`) against an empty database,
+     so tests exercise the exact same schema (and seed data) as production
   4. **Provides transaction-based isolation per test**:
      - Each test gets a database connection with a transaction
      - Uses nested transactions (savepoints) to handle application `commit()` calls
@@ -91,22 +100,39 @@ npm run build
 
 ### Database Initialization
 
-The test database is initialized from the **current SQLAlchemy models** (not by running the full migration chain from scratch), because the existing Alembic migration chain assumes tables already exist (the first migration modifies existing tables rather than creating them).
+The test database is initialized by running the **Alembic migration chain from
+base to head** (`alembic upgrade head`) once per test session. This means the
+test schema — including enum types, foreign keys, indexes, and migration-seeded
+data — matches the production migration head exactly.
 
-This approach:
-- ✅ Creates the exact same schema as production (models match migration head)
-- ✅ Exercises PostgreSQL-specific features (enums, FKs, indexes, JSONB, timestamptz)
-- ✅ Is fast (no per-test DDL)
-- ✅ Tests the actual PostgreSQL behavior that matters
+Because the Phase 2D-4 migration seeds default escalation rules, those default
+rules are present in the test database. Tests that assert exact rule counts or
+matching results clear the table first (see the `_isolate_escalation_rules`
+fixture in `tests/test_notifications.py`).
 
-### Alembic Revision
+### Escalation tests and email delivery
+
+`backend/tests/test_escalation.py` covers the escalation-administration API:
+
+- Authorization (Admin-only rule management and record inspection)
+- Rule CRUD, precedence/specificity, and idempotency
+- Migration seeding presence, idempotency, and reversibility
+- SMTP provider success/failure and configuration
+- Regression: email transport failures never block the escalation workflow
+
+**No test sends real email.** The default email provider is `mock`, and the SMTP
+tests patch `smtplib.SMTP` so no network connection is made. The test
+environment does not set `EMAIL_PROVIDER`, so it falls back to the safe `mock`
+default.
 
 After initialization, the test database is at revision:
+
 ```
-phase2c2_sla_breach_events (head)
+phase2d4_escalation_defaults (head)
 ```
 
 Verify with:
+
 ```bash
 cd backend
 DATABASE_URL=postgresql://test_user:test_pass@localhost:5433/itms_test python -m alembic current

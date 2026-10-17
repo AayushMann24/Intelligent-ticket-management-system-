@@ -80,6 +80,30 @@ class Settings(BaseSettings):
     ai_max_output_tokens: int = Field(default=4096, description="Max output tokens")
     ai_timeout_seconds: int = Field(default=30, description="AI request timeout in seconds")
 
+    # Email Delivery / SMTP (Phase 2D-4)
+    # Default provider is "mock" so development and tests never send real mail.
+    email_provider: str = Field(
+        default="mock",
+        description="Email provider: mock (default), console, or smtp",
+    )
+    email_from_address: str = Field(
+        default="noreply@itms.local",
+        description="Default From address for outgoing email",
+    )
+    email_from_name: str = Field(
+        default="ITMS Notifications",
+        description="Default From display name for outgoing email",
+    )
+    smtp_host: Optional[str] = Field(default=None, description="SMTP server hostname")
+    smtp_port: int = Field(default=587, description="SMTP server port")
+    smtp_username: Optional[str] = Field(default=None, description="SMTP username")
+    smtp_password: Optional[str] = Field(
+        default=None, description="SMTP password (never logged or exposed to clients)"
+    )
+    smtp_use_tls: bool = Field(default=True, description="Use STARTTLS for SMTP connections")
+    smtp_use_ssl: bool = Field(default=False, description="Use implicit SSL for SMTP connections")
+    smtp_timeout_seconds: int = Field(default=10, description="SMTP connection timeout in seconds")
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

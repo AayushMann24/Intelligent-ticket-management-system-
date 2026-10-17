@@ -859,6 +859,22 @@ class TestNotificationIntegration:
 class TestEscalationService:
     """Tests for Escalation Service (Phase 2D-3B)."""
 
+    @pytest.fixture(autouse=True)
+    def _isolate_escalation_rules(self, db_session):
+        """
+        Start each escalation-service test from a clean rule set.
+
+        The Phase 2D-4 migration seeds default escalation rules into the
+        schema. These tests assert exact matching and pagination counts for
+        rules they create themselves, so we clear any pre-existing rules first
+        (the surrounding transaction is rolled back after each test).
+        """
+        from app.models.escalation import EscalationRule
+
+        db_session.query(EscalationRule).delete()
+        db_session.commit()
+        yield
+
     def test_create_escalation_rule(self, db_session):
         """Test creating an escalation rule."""
         from app.services.escalation_service import (

@@ -20,6 +20,7 @@ from app.routers import reports
 from app.routers import knowledge
 from app.routers import assistant
 from app.routers import conversations
+from app.routers import escalation
 from app.routers.dashboard import router as dashboard_router
 from app.config import settings
 from sqlalchemy import text
@@ -74,6 +75,7 @@ app.include_router(reports.router)
 app.include_router(knowledge.router)
 app.include_router(assistant.router)
 app.include_router(conversations.router)
+app.include_router(escalation.router)
 app.include_router(dashboard_router)
 
 
