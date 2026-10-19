@@ -13,6 +13,7 @@ import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { useAuth } from "../../context/useAuth";
 import useTickets from "../../hooks/useTickets";
 import { useToast } from "../../hooks/useToast";
+import { getTimeline } from "../../services/ticketService";
 import TicketAttachmentsPanel from "./TicketAttachmentsPanel";
 
 interface TicketDetailsModalProps {
@@ -110,15 +111,10 @@ export default function TicketDetailsModal({ open, ticket, onClose, onRefresh }:
     const loadTimeline = async () => {
       setTimelineLoading(true);
       try {
-        // We'll fetch timeline via the ticket service directly
-        const response = await fetch(`/tickets/${ticket.id}/timeline?page_size=100`, {
-          headers: { "Authorization": `Bearer ${localStorage.getItem("access_token")}` }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          if (ticketIdRef.current === ticket.id) {
-            setTimeline(data.items || []);
-          }
+        // Use the ticket service which handles auth cookies and CSRF properly
+        const data = await getTimeline(ticket.id, { page_size: 100 });
+        if (ticketIdRef.current === ticket.id) {
+          setTimeline(data.items || []);
         }
       } catch (error) {
         console.error("Failed to load timeline:", error);

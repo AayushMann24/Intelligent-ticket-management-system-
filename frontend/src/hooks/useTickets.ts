@@ -256,18 +256,9 @@ export default function useTickets() {
       return await getWorkflowActions(ticketId);
     } catch (error) {
       console.error("Failed to fetch workflow actions:", error);
-      return {
-        can_assign: false,
-        can_reassign: false,
-        can_unassign: false,
-        can_start_work: false,
-        can_mark_pending: false,
-        can_resolve: false,
-        can_reopen: false,
-        can_close: false,
-        can_escalate: false,
-        valid_status_transitions: [],
-      };
+      // Re-throw to let caller handle the error appropriately
+      // This prevents silently masking auth failures, network errors, etc.
+      throw error;
     }
   };
 
