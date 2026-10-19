@@ -184,6 +184,21 @@ def reset_rate_limiter():
     asyncio.run(rate_limiter.reset_all())
 
 
+@pytest.fixture(scope="function", autouse=True)
+def isolate_upload_dir(tmp_path, monkeypatch):
+    """Redirect attachment storage to a temp directory for every test.
+
+    Prevents tests from accumulating real files in ``backend/uploads`` and
+    gives each test a clean, automatically cleaned-up storage directory.
+    """
+    from app.services import ticket_attachment_service
+
+    upload_dir = tmp_path / "uploads"
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(ticket_attachment_service, "STORAGE_DIR", upload_dir)
+    return upload_dir
+
+
 @pytest.fixture(scope="session", autouse=True)
 def mock_ollama_client():
     """

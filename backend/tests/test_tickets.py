@@ -529,96 +529,352 @@ class TestTicketTimeline:
 
 
 class TestTicketAttachments:
-    def test_upload_attachment_success(self, client, auth_headers):
-        create_response = client.post("/tickets/", json={
-            "title": "Attachment Test",
+    def _create_ticket(self, client, headers, title="Attachment Test"):
+        response = client.post("/tickets/", json={
+            "title": title,
             "description": "Description",
             "priority": "Medium",
-        }, headers=auth_headers)
-        ticket_id = create_response.json()["id"]
+        }, headers=headers)
+        assert response.status_code == 200
+        return response.json()["id"]
 
-        # Create a simple text file
+    # ------------------------------------------------------------------
+    # Upload
+    # ------------------------------------------------------------------
+    def test_upload_attachment_success(self, client, auth_headers, isolate_upload_dir):
+        ticket_id = self._create_ticket(client, auth_headers)
+
         files = {"file": ("test.txt", b"Hello World", "text/plain")}
         response = client.post(f"/tickets/{ticket_id}/attachments", files=files, headers=auth_headers)
+
         assert response.status_code == 201
         data = response.json()
         assert data["original_filename"] == "test.txt"
         assert data["content_type"] == "text/plain"
         assert data["file_size"] == 11
+        assert data["ticket_id"] == ticket_id
+        # Stored filename must never be exposed to clients.
+        assert "stored_filename" not in data
+        # A physical file was written to the isolated upload dir.
+        assert len(list(isolate_upload_dir.iterdir())) == 1
 
-    def test_upload_attachment_unauthorized(self, client, auth_headers, technician_user, admin_auth_headers):
-        tech_response = client.post("/auth/login", json={
-            "email": "tech@example.com",
-            "password": "techpassword123",
-        })
-        tech_token = tech_response.json()["access_token"]
-        tech_headers = {"Authorization": f"Bearer {tech_token}"}
-
-        create_response = client.post("/tickets/", json={
-            "title": "Attachment Test",
-            "description": "Description",
-            "priority": "Medium",
-        }, headers=tech_headers)
-        ticket_id = create_response.json()["id"]
+    def test_upload_attachment_unauthorized(self, client, auth_headers, tech_auth_headers):
+        ticket_id = self._create_ticket(client, tech_auth_headers)
 
         # Employee tries to upload to technician's ticket
         files = {"file": ("test.txt", b"Hello", "text/plain")}
         response = client.post(f"/tickets/{ticket_id}/attachments", files=files, headers=auth_headers)
         assert response.status_code == 403
 
-    def test_upload_invalid_file_type(self, client, auth_headers):
-        create_response = client.post("/tickets/", json={
-            "title": "Invalid Type Test",
-            "description": "Description",
-            "priority": "Medium",
-        }, headers=auth_headers)
-        ticket_id = create_response.json()["id"]
+    def test_upload_to_nonexistent_ticket(self, client, auth_headers):
+        files = {"file": ("test.txt", b"Hello", "text/plain")}
+        response = client.post("/tickets/999999/attachments", files=files, headers=auth_headers)
+        assert response.status_code == 404
 
-        # Try to upload an executable
+    def test_upload_invalid_file_type(self, client, auth_headers):
+        ticket_id = self._create_ticket(client, auth_headers, "Invalid Type Test")
+
+        # Executable content type is not in the allow-list
         files = {"file": ("test.exe", b"MZ...", "application/x-msdownload")}
         response = client.post(f"/tickets/{ticket_id}/attachments", files=files, headers=auth_headers)
         assert response.status_code == 415
 
-    def test_download_attachment(self, client, auth_headers):
-        create_response = client.post("/tickets/", json={
-            "title": "Download Test",
-            "description": "Description",
-            "priority": "Medium",
-        }, headers=auth_headers)
-        ticket_id = create_response.json()["id"]
+    def test_upload_unsupported_extension(self, client, auth_headers):
+        ticket_id = self._create_ticket(client, auth_headers, "Unsupported Extension Test")
 
-        # Upload a file
-        files = {"file": ("test.txt", b"Hello World", "text/plain")}
-        upload_response = client.post(f"/tickets/{ticket_id}/attachments", files=files, headers=auth_headers)
+        # Extension is not allow-listed even though the content type is
+        files = {"file": ("script.sh", b"echo hi", "text/plain")}
+        response = client.post(f"/tickets/{ticket_id}/attachments", files=files, headers=auth_headers)
+        assert response.status_code == 415
+
+    def test_upload_extension_content_type_mismatch(self, client, auth_headers):
+        ticket_id = self._create_ticket(client, auth_headers, "Mismatch Test")
+
+        # Declares a .txt extension but claims to be a PNG
+        files = {"file": ("photo.txt", b"not really an image", "image/png")}
+        response = client.post(f"/tickets/{ticket_id}/attachments", files=files, headers=auth_headers)
+        assert response.status_code == 415
+
+    def test_upload_svg_rejected(self, client, auth_headers):
+        ticket_id = self._create_ticket(client, auth_headers, "SVG Test")
+
+        files = {"file": ("logo.svg", b"<svg></svg>", "image/svg+xml")}
+        response = client.post(f"/tickets/{ticket_id}/attachments", files=files, headers=auth_headers)
+        assert response.status_code == 415
+
+    def test_upload_empty_file(self, client, auth_headers):
+        ticket_id = self._create_ticket(client, auth_headers, "Empty File Test")
+
+        files = {"file": ("empty.txt", b"", "text/plain")}
+        response = client.post(f"/tickets/{ticket_id}/attachments", files=files, headers=auth_headers)
+        assert response.status_code == 400
+
+    def test_upload_oversized_file(self, client, auth_headers):
+        from app.config import settings
+
+        ticket_id = self._create_ticket(client, auth_headers, "Oversized Test")
+
+        oversized = b"0" * (settings.max_upload_size_mb * 1024 * 1024 + 1)
+        files = {"file": ("big.txt", oversized, "text/plain")}
+        response = client.post(f"/tickets/{ticket_id}/attachments", files=files, headers=auth_headers)
+        assert response.status_code == 413
+
+    # ------------------------------------------------------------------
+    # List
+    # ------------------------------------------------------------------
+    def test_list_attachments_success(self, client, auth_headers):
+        ticket_id = self._create_ticket(client, auth_headers, "List Test")
+
+        client.post(
+            f"/tickets/{ticket_id}/attachments",
+            files={"file": ("a.txt", b"aaa", "text/plain")},
+            headers=auth_headers,
+        )
+        client.post(
+            f"/tickets/{ticket_id}/attachments",
+            files={"file": ("b.txt", b"bbb", "text/plain")},
+            headers=auth_headers,
+        )
+
+        response = client.get(f"/tickets/{ticket_id}/attachments", headers=auth_headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] == 2
+        assert len(data["items"]) == 2
+        for item in data["items"]:
+            assert "stored_filename" not in item
+
+    def test_list_attachments_unauthorized(self, client, auth_headers, tech_auth_headers):
+        ticket_id = self._create_ticket(client, tech_auth_headers, "List Unauthorized Test")
+        client.post(
+            f"/tickets/{ticket_id}/attachments",
+            files={"file": ("a.txt", b"aaa", "text/plain")},
+            headers=tech_auth_headers,
+        )
+
+        response = client.get(f"/tickets/{ticket_id}/attachments", headers=auth_headers)
+        assert response.status_code == 403
+
+    # ------------------------------------------------------------------
+    # Get / Download
+    # ------------------------------------------------------------------
+    def test_download_attachment(self, client, auth_headers):
+        ticket_id = self._create_ticket(client, auth_headers, "Download Test")
+
+        upload_response = client.post(
+            f"/tickets/{ticket_id}/attachments",
+            files={"file": ("test.txt", b"Hello World", "text/plain")},
+            headers=auth_headers,
+        )
         attachment_id = upload_response.json()["id"]
 
-        # Download the file
-        response = client.get(f"/tickets/{ticket_id}/attachments/{attachment_id}/download", headers=auth_headers)
+        response = client.get(
+            f"/tickets/{ticket_id}/attachments/{attachment_id}/download",
+            headers=auth_headers,
+        )
         assert response.status_code == 200
         assert response.headers["content-type"].startswith("text/plain")
         assert response.content == b"Hello World"
 
-    def test_delete_attachment(self, client, auth_headers):
-        create_response = client.post("/tickets/", json={
-            "title": "Delete Attachment Test",
-            "description": "Description",
-            "priority": "Medium",
-        }, headers=auth_headers)
-        ticket_id = create_response.json()["id"]
+    def test_get_attachment_mismatched_ticket_id(self, client, auth_headers):
+        ticket_a = self._create_ticket(client, auth_headers, "Ticket A")
+        ticket_b = self._create_ticket(client, auth_headers, "Ticket B")
 
-        # Upload a file
-        files = {"file": ("test.txt", b"Hello", "text/plain")}
-        upload_response = client.post(f"/tickets/{ticket_id}/attachments", files=files, headers=auth_headers)
+        upload_response = client.post(
+            f"/tickets/{ticket_a}/attachments",
+            files={"file": ("test.txt", b"Hello", "text/plain")},
+            headers=auth_headers,
+        )
         attachment_id = upload_response.json()["id"]
 
-        # Delete the attachment
-        response = client.delete(f"/tickets/{ticket_id}/attachments/{attachment_id}", headers=auth_headers)
+        response = client.get(
+            f"/tickets/{ticket_b}/attachments/{attachment_id}",
+            headers=auth_headers,
+        )
+        assert response.status_code == 404
+
+    def test_download_mismatched_ticket_id(self, client, auth_headers):
+        ticket_a = self._create_ticket(client, auth_headers, "Ticket A")
+        ticket_b = self._create_ticket(client, auth_headers, "Ticket B")
+
+        upload_response = client.post(
+            f"/tickets/{ticket_a}/attachments",
+            files={"file": ("test.txt", b"Hello", "text/plain")},
+            headers=auth_headers,
+        )
+        attachment_id = upload_response.json()["id"]
+
+        response = client.get(
+            f"/tickets/{ticket_b}/attachments/{attachment_id}/download",
+            headers=auth_headers,
+        )
+        assert response.status_code == 404
+
+    def test_download_attachment_unauthorized(self, client, auth_headers, tech_auth_headers):
+        ticket_id = self._create_ticket(client, tech_auth_headers, "Download Unauthorized Test")
+
+        upload_response = client.post(
+            f"/tickets/{ticket_id}/attachments",
+            files={"file": ("test.txt", b"Hello", "text/plain")},
+            headers=tech_auth_headers,
+        )
+        attachment_id = upload_response.json()["id"]
+
+        response = client.get(
+            f"/tickets/{ticket_id}/attachments/{attachment_id}/download",
+            headers=auth_headers,
+        )
+        assert response.status_code == 404
+
+    def test_download_missing_physical_file(self, client, auth_headers, isolate_upload_dir):
+        ticket_id = self._create_ticket(client, auth_headers, "Missing File Test")
+
+        upload_response = client.post(
+            f"/tickets/{ticket_id}/attachments",
+            files={"file": ("test.txt", b"Hello", "text/plain")},
+            headers=auth_headers,
+        )
+        attachment_id = upload_response.json()["id"]
+
+        # Simulate a file that vanished from disk
+        for stored_file in isolate_upload_dir.iterdir():
+            stored_file.unlink()
+
+        response = client.get(
+            f"/tickets/{ticket_id}/attachments/{attachment_id}/download",
+            headers=auth_headers,
+        )
+        assert response.status_code == 404
+
+    # ------------------------------------------------------------------
+    # Delete
+    # ------------------------------------------------------------------
+    def test_delete_attachment(self, client, auth_headers):
+        ticket_id = self._create_ticket(client, auth_headers, "Delete Attachment Test")
+
+        upload_response = client.post(
+            f"/tickets/{ticket_id}/attachments",
+            files={"file": ("test.txt", b"Hello", "text/plain")},
+            headers=auth_headers,
+        )
+        attachment_id = upload_response.json()["id"]
+
+        response = client.delete(
+            f"/tickets/{ticket_id}/attachments/{attachment_id}",
+            headers=auth_headers,
+        )
         assert response.status_code == 200
         assert response.json()["message"] == "Attachment deleted successfully"
 
-        # Try to download deleted attachment
-        download_response = client.get(f"/tickets/{ticket_id}/attachments/{attachment_id}/download", headers=auth_headers)
+        # Soft-deleted attachment is no longer downloadable
+        download_response = client.get(
+            f"/tickets/{ticket_id}/attachments/{attachment_id}/download",
+            headers=auth_headers,
+        )
         assert download_response.status_code == 404
+
+    def test_delete_mismatched_ticket_id(self, client, auth_headers):
+        ticket_a = self._create_ticket(client, auth_headers, "Ticket A")
+        ticket_b = self._create_ticket(client, auth_headers, "Ticket B")
+
+        upload_response = client.post(
+            f"/tickets/{ticket_a}/attachments",
+            files={"file": ("test.txt", b"Hello", "text/plain")},
+            headers=auth_headers,
+        )
+        attachment_id = upload_response.json()["id"]
+
+        response = client.delete(
+            f"/tickets/{ticket_b}/attachments/{attachment_id}",
+            headers=auth_headers,
+        )
+        assert response.status_code == 404
+
+        # Original attachment is untouched
+        assert client.get(
+            f"/tickets/{ticket_a}/attachments/{attachment_id}",
+            headers=auth_headers,
+        ).status_code == 200
+
+    def test_delete_attachment_non_uploader_denied(self, client, auth_headers, admin_auth_headers):
+        # Employee creates the ticket, Admin uploads, Employee cannot delete.
+        ticket_id = self._create_ticket(client, auth_headers, "Non Uploader Delete Test")
+
+        upload_response = client.post(
+            f"/tickets/{ticket_id}/attachments",
+            files={"file": ("admin.txt", b"Hello", "text/plain")},
+            headers=admin_auth_headers,
+        )
+        attachment_id = upload_response.json()["id"]
+
+        response = client.delete(
+            f"/tickets/{ticket_id}/attachments/{attachment_id}",
+            headers=auth_headers,
+        )
+        assert response.status_code == 403
+
+    def test_deleted_attachment_excluded_from_listing(self, client, auth_headers):
+        ticket_id = self._create_ticket(client, auth_headers, "Listing Exclusion Test")
+
+        first = client.post(
+            f"/tickets/{ticket_id}/attachments",
+            files={"file": ("keep.txt", b"keep", "text/plain")},
+            headers=auth_headers,
+        ).json()
+        second = client.post(
+            f"/tickets/{ticket_id}/attachments",
+            files={"file": ("remove.txt", b"remove", "text/plain")},
+            headers=auth_headers,
+        ).json()
+
+        client.delete(
+            f"/tickets/{ticket_id}/attachments/{second['id']}",
+            headers=auth_headers,
+        )
+
+        response = client.get(f"/tickets/{ticket_id}/attachments", headers=auth_headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] == 1
+        assert [item["id"] for item in data["items"]] == [first["id"]]
+
+    def test_delete_removes_physical_file(self, client, auth_headers, isolate_upload_dir):
+        ticket_id = self._create_ticket(client, auth_headers, "Physical Removal Test")
+
+        attachment_id = client.post(
+            f"/tickets/{ticket_id}/attachments",
+            files={"file": ("test.txt", b"Hello", "text/plain")},
+            headers=auth_headers,
+        ).json()["id"]
+
+        assert len(list(isolate_upload_dir.iterdir())) == 1
+
+        response = client.delete(
+            f"/tickets/{ticket_id}/attachments/{attachment_id}",
+            headers=auth_headers,
+        )
+        assert response.status_code == 200
+        assert list(isolate_upload_dir.iterdir()) == []
+
+    def test_delete_attachment_missing_file_is_safe(self, client, auth_headers, isolate_upload_dir):
+        ticket_id = self._create_ticket(client, auth_headers, "Delete Missing File Test")
+
+        attachment_id = client.post(
+            f"/tickets/{ticket_id}/attachments",
+            files={"file": ("test.txt", b"Hello", "text/plain")},
+            headers=auth_headers,
+        ).json()["id"]
+
+        # Remove the file first so the delete handler hits an already-missing file.
+        for stored_file in isolate_upload_dir.iterdir():
+            stored_file.unlink()
+
+        response = client.delete(
+            f"/tickets/{ticket_id}/attachments/{attachment_id}",
+            headers=auth_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["message"] == "Attachment deleted successfully"
 
 
 class TestSLABreach:
@@ -1020,3 +1276,344 @@ class TestSLABreach:
         result = check_all_sla_breaches(db_session)
         # Should not process breach for closed ticket
         assert result["resolution_breaches_processed"] == 0
+
+
+class TestTicketWorkflowHistoryPersistence:
+    """Regression tests for ticket workflow audit integrity (Milestone 4C).
+
+    Every workflow operation must persist the ticket state change together with
+    the corresponding ``TicketHistory`` events in the same transaction, so the
+    event cannot be lost when no unrelated downstream service commits later.
+    The assertions below read the events back through the history/timeline
+    endpoints (i.e. from persisted rows), not from in-memory objects.
+    """
+
+    def _create_ticket(self, client, headers, title="Workflow History Ticket"):
+        response = client.post("/tickets/", json={
+            "title": title,
+            "description": "Description",
+            "priority": "Medium",
+        }, headers=headers)
+        assert response.status_code == 200
+        return response.json()["id"]
+
+    def _history(self, client, ticket_id, headers):
+        response = client.get(
+            f"/tickets/{ticket_id}/history?page=1&page_size=100",
+            headers=headers,
+        )
+        assert response.status_code == 200
+        return response.json()["items"]
+
+    def _events(self, client, ticket_id, headers, event_type):
+        return [
+            item for item in self._history(client, ticket_id, headers)
+            if item["event_type"] == event_type
+        ]
+
+    def _timeline_events(self, client, ticket_id, headers, event_type):
+        response = client.get(
+            f"/tickets/{ticket_id}/timeline?page=1&page_size=200",
+            headers=headers,
+        )
+        assert response.status_code == 200
+        return [
+            item for item in response.json()["items"]
+            if item.get("event_type") == event_type
+        ]
+
+    # ------------------------------------------------------------------
+    # Assignment
+    # ------------------------------------------------------------------
+    def test_assign_persists_assigned_and_status_change(
+        self, client, auth_headers, admin_auth_headers, technician_user, db_session
+    ):
+        ticket_id = self._create_ticket(client, auth_headers)
+
+        response = client.put(f"/tickets/{ticket_id}/assign", json={
+            "assigned_to": technician_user.id,
+        }, headers=admin_auth_headers)
+        assert response.status_code == 200
+        assert response.json()["status"] == "Assigned"
+        assert response.json()["assigned_to"] == technician_user.id
+
+        # Exactly one ASSIGNED event with the correct transition values.
+        assigned = self._events(client, ticket_id, admin_auth_headers, "ASSIGNED")
+        assert len(assigned) == 1
+        assert assigned[0]["old_value"] == "Unassigned"
+        assert assigned[0]["new_value"] == str(technician_user.id)
+
+        # The dead STATUS_CHANGED branch is now a real, single Open -> Assigned event.
+        transitions = self._events(client, ticket_id, admin_auth_headers, "STATUS_CHANGED")
+        assert len(transitions) == 1
+        assert transitions[0]["old_value"] == "Open"
+        assert transitions[0]["new_value"] == "Assigned"
+
+        # The event is also visible on the timeline.
+        timeline_assigned = self._timeline_events(
+            client, ticket_id, admin_auth_headers, "ASSIGNED"
+        )
+        assert len(timeline_assigned) == 1
+        assert timeline_assigned[0]["new_value"] == str(technician_user.id)
+
+        # And the rows are genuinely persisted in the database.
+        from app.models.ticket_comment import TicketHistory, HistoryEventType
+        persisted = db_session.query(TicketHistory).filter(
+            TicketHistory.ticket_id == ticket_id,
+        ).all()
+        assert sum(
+            1 for e in persisted if e.event_type == HistoryEventType.ASSIGNED
+        ) == 1
+        assert sum(
+            1 for e in persisted if e.event_type == HistoryEventType.STATUS_CHANGED
+        ) == 1
+
+    def test_reassign_persists_previous_and_new_assignee(
+        self, client, auth_headers, admin_auth_headers, technician_user, db_session
+    ):
+        from uuid import uuid4
+
+        from app.models.user import User
+        from app.utils.security import hash_password
+
+        second_tech = User(
+            name="Second Tech",
+            email=f"reassign-target-{uuid4().hex}@example.com",
+            password=hash_password("techpassword123"),
+            role="Technician",
+        )
+        db_session.add(second_tech)
+        db_session.commit()
+        db_session.refresh(second_tech)
+
+        ticket_id = self._create_ticket(client, auth_headers)
+        client.put(f"/tickets/{ticket_id}/assign", json={
+            "assigned_to": technician_user.id,
+        }, headers=admin_auth_headers)
+
+        response = client.put(f"/tickets/{ticket_id}/reassign", json={
+            "assigned_to": second_tech.id,
+        }, headers=admin_auth_headers)
+        assert response.status_code == 200
+        assert response.json()["assigned_to"] == second_tech.id
+
+        reassigned = self._events(client, ticket_id, admin_auth_headers, "REASSIGNED")
+        assert len(reassigned) == 1
+        assert reassigned[0]["old_value"] == str(technician_user.id)
+        assert reassigned[0]["new_value"] == str(second_tech.id)
+
+    def test_unassign_persists_unassigned_and_status_transition(
+        self, client, auth_headers, admin_auth_headers, technician_user
+    ):
+        ticket_id = self._create_ticket(client, auth_headers)
+        client.put(f"/tickets/{ticket_id}/assign", json={
+            "assigned_to": technician_user.id,
+        }, headers=admin_auth_headers)
+
+        response = client.post(
+            f"/tickets/{ticket_id}/unassign", json={}, headers=admin_auth_headers
+        )
+        assert response.status_code == 200
+        assert response.json()["status"] == "Open"
+        assert response.json()["assigned_to"] is None
+
+        unassigned = self._events(client, ticket_id, admin_auth_headers, "UNASSIGNED")
+        assert len(unassigned) == 1
+        assert unassigned[0]["old_value"] == str(technician_user.id)
+        assert unassigned[0]["new_value"] == "Unassigned"
+
+        # The status transition must reflect the real prior status, not compare
+        # the already-mutated value against itself.
+        transitions = [
+            e for e in self._events(client, ticket_id, admin_auth_headers, "STATUS_CHANGED")
+            if e["old_value"] == "Assigned"
+        ]
+        assert len(transitions) == 1
+        assert transitions[0]["new_value"] == "Open"
+
+    # ------------------------------------------------------------------
+    # Status transitions
+    # ------------------------------------------------------------------
+    def _assigned_ticket(self, client, auth_headers, admin_auth_headers, technician_user):
+        ticket_id = self._create_ticket(client, auth_headers)
+        assign = client.put(f"/tickets/{ticket_id}/assign", json={
+            "assigned_to": technician_user.id,
+        }, headers=admin_auth_headers)
+        assert assign.status_code == 200
+        return ticket_id
+
+    def test_start_work_persists_status_change(
+        self, client, auth_headers, admin_auth_headers, tech_auth_headers, technician_user
+    ):
+        ticket_id = self._assigned_ticket(
+            client, auth_headers, admin_auth_headers, technician_user
+        )
+
+        response = client.post(
+            f"/tickets/{ticket_id}/start-work", headers=tech_auth_headers
+        )
+        assert response.status_code == 200
+        assert response.json()["status"] == "In Progress"
+
+        transitions = self._events(client, ticket_id, admin_auth_headers, "STATUS_CHANGED")
+        assert any(
+            e["old_value"] == "Assigned" and e["new_value"] == "In Progress"
+            for e in transitions
+        )
+
+    def test_mark_pending_persists_status_change(
+        self, client, auth_headers, admin_auth_headers, tech_auth_headers, technician_user
+    ):
+        ticket_id = self._assigned_ticket(
+            client, auth_headers, admin_auth_headers, technician_user
+        )
+        client.post(f"/tickets/{ticket_id}/start-work", headers=tech_auth_headers)
+
+        response = client.post(
+            f"/tickets/{ticket_id}/mark-pending",
+            json={"reason": "Waiting for customer response"},
+            headers=tech_auth_headers
+        )
+        assert response.status_code == 200
+        assert response.json()["status"] == "Pending"
+
+        transitions = self._events(client, ticket_id, admin_auth_headers, "STATUS_CHANGED")
+        assert any(
+            e["old_value"] == "In Progress" and e["new_value"] == "Pending"
+            for e in transitions
+        )
+
+    def test_resolve_persists_status_and_resolution_history(
+        self, client, auth_headers, admin_auth_headers, tech_auth_headers, technician_user
+    ):
+        ticket_id = self._assigned_ticket(
+            client, auth_headers, admin_auth_headers, technician_user
+        )
+        client.post(f"/tickets/{ticket_id}/start-work", headers=tech_auth_headers)
+
+        response = client.post(f"/tickets/{ticket_id}/resolve", json={
+            "resolution_summary": "Fixed the leak",
+        }, headers=tech_auth_headers)
+        assert response.status_code == 200
+        assert response.json()["status"] == "Resolved"
+
+        transitions = self._events(client, ticket_id, admin_auth_headers, "STATUS_CHANGED")
+        assert any(
+            e["old_value"] == "In Progress" and e["new_value"] == "Resolved"
+            for e in transitions
+        )
+
+        resolved = self._events(client, ticket_id, admin_auth_headers, "TICKET_RESOLVED")
+        assert len(resolved) == 1
+        assert resolved[0]["new_value"] == "Resolved: Fixed the leak"
+
+        timeline_resolved = self._timeline_events(
+            client, ticket_id, admin_auth_headers, "TICKET_RESOLVED"
+        )
+        assert len(timeline_resolved) == 1
+
+    def test_reopen_persists_history(
+        self, client, auth_headers, admin_auth_headers, tech_auth_headers, technician_user
+    ):
+        ticket_id = self._assigned_ticket(
+            client, auth_headers, admin_auth_headers, technician_user
+        )
+        client.post(f"/tickets/{ticket_id}/start-work", headers=tech_auth_headers)
+        client.post(f"/tickets/{ticket_id}/resolve", json={
+            "resolution_summary": "Fixed",
+        }, headers=tech_auth_headers)
+
+        response = client.post(f"/tickets/{ticket_id}/reopen", json={
+            "reason": "Issue returned",
+        }, headers=admin_auth_headers)
+        assert response.status_code == 200
+        assert response.json()["status"] == "Open"
+
+        reopened = self._events(client, ticket_id, admin_auth_headers, "TICKET_REOPENED")
+        assert len(reopened) == 1
+        assert reopened[0]["new_value"] == "Reopened: Issue returned"
+
+        transitions = [
+            e for e in self._events(client, ticket_id, admin_auth_headers, "STATUS_CHANGED")
+            if e["old_value"] == "Resolved"
+        ]
+        assert len(transitions) == 1
+        assert transitions[0]["new_value"] == "Open"
+
+    def test_close_persists_history(
+        self, client, auth_headers, admin_auth_headers, tech_auth_headers, technician_user
+    ):
+        ticket_id = self._assigned_ticket(
+            client, auth_headers, admin_auth_headers, technician_user
+        )
+        client.post(f"/tickets/{ticket_id}/start-work", headers=tech_auth_headers)
+        client.post(f"/tickets/{ticket_id}/resolve", json={
+            "resolution_summary": "Fixed",
+        }, headers=tech_auth_headers)
+
+        response = client.post(
+            f"/tickets/{ticket_id}/close", json={}, headers=tech_auth_headers
+        )
+        assert response.status_code == 200
+        assert response.json()["status"] == "Closed"
+
+        closed = self._events(client, ticket_id, admin_auth_headers, "TICKET_CLOSED")
+        assert len(closed) == 1
+        assert closed[0]["new_value"] == "Ticket closed"
+
+        transitions = [
+            e for e in self._events(client, ticket_id, admin_auth_headers, "STATUS_CHANGED")
+            if e["old_value"] == "Resolved"
+        ]
+        assert len(transitions) == 1
+        assert transitions[0]["new_value"] == "Closed"
+
+    # ------------------------------------------------------------------
+    # Legacy status update
+    # ------------------------------------------------------------------
+    def test_legacy_status_update_persists_history(
+        self, client, auth_headers, admin_auth_headers
+    ):
+        ticket_id = self._create_ticket(client, auth_headers)
+
+        response = client.patch(f"/tickets/{ticket_id}/status", json={
+            "status": "Assigned",
+        }, headers=admin_auth_headers)
+        assert response.status_code == 200
+        assert response.json()["status"] == "Assigned"
+
+        transitions = self._events(client, ticket_id, admin_auth_headers, "STATUS_CHANGED")
+        assert len(transitions) == 1
+        assert transitions[0]["old_value"] == "Open"
+        assert transitions[0]["new_value"] == "Assigned"
+
+    # ------------------------------------------------------------------
+    # Escalation
+    # ------------------------------------------------------------------
+    def test_escalation_history_persists_when_notifications_disabled(
+        self, client, auth_headers, admin_auth_headers, technician_user, db_session
+    ):
+        from app.services.preferences_service import update_preferences
+
+        # Disable the escalation target's in-app notifications. Notification
+        # creation will early-return, so the history event must be persisted by
+        # the escalation operation itself.
+        update_preferences(
+            db_session,
+            technician_user.id,
+            {"in_app_notifications_enabled": False},
+        )
+
+        ticket_id = self._create_ticket(client, auth_headers)
+
+        response = client.post(f"/tickets/{ticket_id}/escalate", json={
+            "escalated_to": technician_user.id,
+            "escalation_reason": "Needs senior attention",
+        }, headers=admin_auth_headers)
+        assert response.status_code == 200
+
+        escalated = self._events(client, ticket_id, admin_auth_headers, "ESCALATED")
+        assert len(escalated) == 1
+        assert escalated[0]["new_value"] == (
+            f"Escalated to {technician_user.name}: Needs senior attention"
+        )

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, Query, UploadFile, File
 from sqlalchemy.orm import Session
 from fastapi.responses import FileResponse
 
@@ -18,6 +18,7 @@ from app.dependencies.roles import (
     require_authenticated_user,
 )
 from app.dependencies.csrf import csrf_protect
+from app.dependencies.rate_limit import rate_limit_dependency
 
 router = APIRouter(
     tags=["Ticket Attachments"],
@@ -27,8 +28,8 @@ router = APIRouter(
 @router.post(
     "/{ticket_id}/attachments",
     response_model=TicketAttachmentResponse,
-    status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(csrf_protect)],
+    status_code=201,
+    dependencies=[Depends(csrf_protect), Depends(rate_limit_dependency)],
 )
 async def upload_ticket_attachment(
     ticket_id: int,
@@ -81,6 +82,7 @@ def get_ticket_attachment(
         attachment_id=attachment_id,
         user_id=user["id"],
         user_role=user["role"],
+        ticket_id=ticket_id,
     )
 
 
@@ -99,13 +101,14 @@ def download_ticket_attachment(
         attachment_id=attachment_id,
         user_id=user["id"],
         user_role=user["role"],
+        ticket_id=ticket_id,
     )
 
 
 @router.delete(
     "/{ticket_id}/attachments/{attachment_id}",
-    status_code=status.HTTP_200_OK,
-    dependencies=[Depends(csrf_protect)],
+    status_code=200,
+    dependencies=[Depends(csrf_protect), Depends(rate_limit_dependency)],
 )
 def delete_ticket_attachment(
     ticket_id: int,
@@ -118,4 +121,5 @@ def delete_ticket_attachment(
         attachment_id=attachment_id,
         user_id=user["id"],
         user_role=user["role"],
+        ticket_id=ticket_id,
     )

@@ -633,14 +633,15 @@ def assign_ticket(db: Session, ticket_id: int, assigned_to: int, user_id: int, u
     # Validate transition
     validate_transition(ticket.status, TicketStatus.ASSIGNED, user_role)
 
+    # Capture the prior values before mutating the ticket, so history records the
+    # real transition instead of comparing an already-mutated value to itself.
     old_assigned = ticket.assigned_to
+    old_status = ticket.status
     ticket.assigned_to = assigned_to
     ticket.status = TicketStatus.ASSIGNED
 
-    db.commit()
-    db.refresh(ticket)
-
-    # Record history
+    # Record history (staged in the session and committed together with the
+    # mutation below, so it cannot be lost to a missing later commit).
     event_type = HistoryEventType.REASSIGNED if old_assigned else HistoryEventType.ASSIGNED
     record_history(
         db=db,
@@ -651,16 +652,19 @@ def assign_ticket(db: Session, ticket_id: int, assigned_to: int, user_id: int, u
         new_value=str(assigned_to),
     )
 
-    # Also record status change
-    if ticket.status != "Assigned":  # Only if status actually changed
+    # Also record the status change, but only when the status actually changed.
+    if old_status != TicketStatus.ASSIGNED:
         record_history(
             db=db,
             ticket_id=ticket_id,
             actor_id=user_id,
             event_type=HistoryEventType.STATUS_CHANGED,
-            old_value=ticket.status,  # This was the old status before change
-            new_value=TicketStatus.ASSIGNED,
+            old_value=old_status,
+            new_value=TicketStatus.ASSIGNED.value,
         )
+
+    db.commit()
+    db.refresh(ticket)
 
     # Create notification for assigned user
     notification_type = NotificationType.TICKET_REASSIGNED if old_assigned else NotificationType.TICKET_ASSIGNED
@@ -714,10 +718,8 @@ def reassign_ticket(db: Session, ticket_id: int, assigned_to: int, user_id: int,
     ticket.assigned_to = assigned_to
     # Status remains ASSIGNED (or IN_PROGRESS if it was already started)
 
-    db.commit()
-    db.refresh(ticket)
-
-    # Record history
+    # Record history before committing so the event is persisted atomically
+    # with the assignment change.
     record_history(
         db=db,
         ticket_id=ticket_id,
@@ -726,6 +728,9 @@ def reassign_ticket(db: Session, ticket_id: int, assigned_to: int, user_id: int,
         old_value=str(old_assigned),
         new_value=str(assigned_to),
     )
+
+    db.commit()
+    db.refresh(ticket)
 
     # Create notification for newly assigned user
     create_notification(
@@ -760,15 +765,15 @@ def unassign_ticket(db: Session, ticket_id: int, user_id: int, user_role: str):
     # Validate transition back to OPEN
     validate_transition(ticket.status, TicketStatus.OPEN, user_role)
 
+    # Capture the prior values before mutating the ticket.
     old_assigned = ticket.assigned_to
+    old_status = ticket.status
     ticket.assigned_to = None
     ticket.status = TicketStatus.OPEN
     ticket.assignment_reason = None
 
-    db.commit()
-    db.refresh(ticket)
-
-    # Record history
+    # Record history before committing so the events are persisted atomically
+    # with the unassignment.
     record_history(
         db=db,
         ticket_id=ticket_id,
@@ -778,15 +783,19 @@ def unassign_ticket(db: Session, ticket_id: int, user_id: int, user_role: str):
         new_value="Unassigned",
     )
 
-    # Record status change
-    record_history(
-        db=db,
-        ticket_id=ticket_id,
-        actor_id=user_id,
-        event_type=HistoryEventType.STATUS_CHANGED,
-        old_value=ticket.status,  # Will be the old status
-        new_value=TicketStatus.OPEN,
-    )
+    # Record the status change (e.g. Assigned -> Open), only when it changed.
+    if old_status != TicketStatus.OPEN:
+        record_history(
+            db=db,
+            ticket_id=ticket_id,
+            actor_id=user_id,
+            event_type=HistoryEventType.STATUS_CHANGED,
+            old_value=old_status,
+            new_value=TicketStatus.OPEN.value,
+        )
+
+    db.commit()
+    db.refresh(ticket)
 
     return ticket
 
@@ -815,26 +824,28 @@ def start_work(db: Session, ticket_id: int, user_id: int, user_role: str):
     old_status = ticket.status
     ticket.status = TicketStatus.IN_PROGRESS
 
-    db.commit()
-    db.refresh(ticket)
-
-    # Mark response SLA as met when technician starts work (first response)
-    mark_response_sla_met(db, ticket)
-
+    # Record history before committing so it is persisted atomically with the
+    # status change.
     record_history(
         db=db,
         ticket_id=ticket_id,
         actor_id=user_id,
         event_type=HistoryEventType.STATUS_CHANGED,
         old_value=old_status,
-        new_value=TicketStatus.IN_PROGRESS,
+        new_value=TicketStatus.IN_PROGRESS.value,
     )
+
+    db.commit()
+    db.refresh(ticket)
+
+    # Mark response SLA as met when technician starts work (first response)
+    mark_response_sla_met(db, ticket)
 
     return ticket
 
 
 # --- Mark Pending ---
-def mark_pending(db: Session, ticket_id: int, user_id: int, user_role: str):
+def mark_pending(db: Session, ticket_id: int, reason: str, user_id: int, user_role: str):
     ticket = get_ticket_by_id(db, ticket_id)
 
     # Must be assignee or admin
@@ -844,13 +855,17 @@ def mark_pending(db: Session, ticket_id: int, user_id: int, user_role: str):
             detail="Only the assigned technician or Admin can mark pending"
         )
 
+    if not reason or not reason.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Pending reason is required"
+        )
+
     validate_transition(ticket.status, "Pending", user_role)
 
     old_status = ticket.status
     ticket.status = "Pending"
-
-    db.commit()
-    db.refresh(ticket)
+    ticket.pending_reason = reason.strip()
 
     record_history(
         db=db,
@@ -860,6 +875,19 @@ def mark_pending(db: Session, ticket_id: int, user_id: int, user_role: str):
         old_value=old_status,
         new_value="Pending",
     )
+
+    # Record the pending reason as a separate history event
+    record_history(
+        db=db,
+        ticket_id=ticket_id,
+        actor_id=user_id,
+        event_type=HistoryEventType.STATUS_CHANGED,
+        old_value="",
+        new_value=f"Marked pending: {reason.strip()}",
+    )
+
+    db.commit()
+    db.refresh(ticket)
 
     return ticket
 
@@ -889,20 +917,14 @@ def resolve_ticket(db: Session, ticket_id: int, resolution_summary: str, user_id
     ticket.resolved_at = datetime.now(timezone.utc)
     ticket.resolved_by = user_id
 
-    db.commit()
-    db.refresh(ticket)
-
-    # Mark resolution SLA as met
-    mark_resolution_sla_met(db, ticket)
-
-    # Record history - status change
+    # Record history - status change (before commit so it is persisted)
     record_history(
         db=db,
         ticket_id=ticket_id,
         actor_id=user_id,
         event_type=HistoryEventType.STATUS_CHANGED,
         old_value=old_status,
-        new_value=TicketStatus.RESOLVED,
+        new_value=TicketStatus.RESOLVED.value,
     )
 
     # Record history - resolution
@@ -914,6 +936,12 @@ def resolve_ticket(db: Session, ticket_id: int, resolution_summary: str, user_id
         old_value=old_status,
         new_value=f"Resolved: {resolution_summary.strip()}",
     )
+
+    db.commit()
+    db.refresh(ticket)
+
+    # Mark resolution SLA as met
+    mark_resolution_sla_met(db, ticket)
 
     return ticket
 
@@ -951,17 +979,14 @@ def reopen_ticket(db: Session, ticket_id: int, reason: str | None, user_id: int,
     ticket.resolved_at = None
     ticket.resolved_by = None
 
-    db.commit()
-    db.refresh(ticket)
-
-    # Record history - status change
+    # Record history - status change (before commit so it is persisted)
     record_history(
         db=db,
         ticket_id=ticket_id,
         actor_id=user_id,
         event_type=HistoryEventType.STATUS_CHANGED,
         old_value=old_status,
-        new_value=target_status,
+        new_value=target_status.value,
     )
 
     # Record history - reopen event
@@ -974,6 +999,9 @@ def reopen_ticket(db: Session, ticket_id: int, reason: str | None, user_id: int,
         old_value=old_status,
         new_value=reopen_detail,
     )
+
+    db.commit()
+    db.refresh(ticket)
 
     return ticket
 
@@ -1007,16 +1035,15 @@ def close_ticket(db: Session, ticket_id: int, user_id: int, user_role: str):
     old_status = ticket.status
     ticket.status = TicketStatus.CLOSED
 
-    db.commit()
-    db.refresh(ticket)
-
+    # Record history before committing so it is persisted atomically with the
+    # status change.
     record_history(
         db=db,
         ticket_id=ticket_id,
         actor_id=user_id,
         event_type=HistoryEventType.STATUS_CHANGED,
         old_value=old_status,
-        new_value=TicketStatus.CLOSED,
+        new_value=TicketStatus.CLOSED.value,
     )
 
     record_history(
@@ -1027,6 +1054,9 @@ def close_ticket(db: Session, ticket_id: int, user_id: int, user_role: str):
         old_value=old_status,
         new_value="Ticket closed",
     )
+
+    db.commit()
+    db.refresh(ticket)
 
     return ticket
 
@@ -1070,9 +1100,8 @@ def escalate_ticket(db: Session, ticket_id: int, escalated_to: int, escalation_r
     ticket.escalation_reason = escalation_reason.strip()
     ticket.escalated_at = datetime.now(timezone.utc)
 
-    db.commit()
-    db.refresh(ticket)
-
+    # Record history before committing so it is persisted atomically with the
+    # escalation, independent of whether a notification is later created.
     record_history(
         db=db,
         ticket_id=ticket_id,
@@ -1081,6 +1110,9 @@ def escalate_ticket(db: Session, ticket_id: int, escalated_to: int, escalation_r
         old_value="",
         new_value=f"Escalated to {target_user.name}: {escalation_reason.strip()}",
     )
+
+    db.commit()
+    db.refresh(ticket)
 
     # Create notification for escalation target
     create_notification(
@@ -1177,9 +1209,8 @@ def update_ticket_status(db: Session, ticket_id: int, status: str, user_id: int,
     old_status = ticket.status
     ticket.status = status
 
-    db.commit()
-    db.refresh(ticket)
-
+    # Record history before committing so it is persisted atomically with the
+    # status change.
     record_history(
         db=db,
         ticket_id=ticket_id,
@@ -1188,6 +1219,9 @@ def update_ticket_status(db: Session, ticket_id: int, status: str, user_id: int,
         old_value=old_status,
         new_value=status,
     )
+
+    db.commit()
+    db.refresh(ticket)
 
     return ticket
 

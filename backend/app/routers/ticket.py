@@ -10,6 +10,7 @@ from app.schemas.ticket import (
     TicketAssign,
     TicketStatusUpdate,
     TicketUnassign,
+    TicketMarkPending,
     TicketResolve,
     TicketReopen,
     TicketClose,
@@ -295,6 +296,7 @@ def start_work_on_ticket(
 )
 def mark_ticket_pending(
     ticket_id: int,
+    data: TicketMarkPending,
     db: Session = Depends(get_db),
     user=Depends(require_admin_or_technician),
 ):
@@ -302,6 +304,7 @@ def mark_ticket_pending(
     return mark_pending(
         db,
         ticket_id,
+        data.reason,
         user["id"],
         user["role"],
     )

@@ -6,6 +6,7 @@ import Sidebar from "../components/layout/Sidebar";
 import Navbar from "../components/layout/Navbar";
 import AnimatedBackground from "../components/common/AnimatedBackground";
 import { useReducedMotion } from "../hooks/useReducedMotion";
+import { ToastProvider } from "../hooks/useToast";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -23,28 +24,30 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const reducedMotion = useReducedMotion();
 
   return (
-    <div className="relative flex min-h-screen text-slate-900 transition-colors duration-300 dark:text-white">
-      <AnimatedBackground variant="app" />
+    <ToastProvider>
+      <div className="relative flex min-h-screen text-slate-900 transition-colors duration-300 dark:text-white">
+        <AnimatedBackground variant="app" />
 
-      <Sidebar />
+        <Sidebar />
 
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Navbar />
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <Navbar />
 
-        <main className="relative flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              initial={reducedMotion ? undefined : pageVariants.initial}
-              animate={reducedMotion ? undefined : pageVariants.animate}
-              exit={reducedMotion ? undefined : pageVariants.exit}
-              variants={pageVariants}
-            >
-              {children}
-            </motion.div>
-          </AnimatePresence>
-        </main>
+          <main className="relative flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                initial={reducedMotion ? undefined : pageVariants.initial}
+                animate={reducedMotion ? undefined : pageVariants.animate}
+                exit={reducedMotion ? undefined : pageVariants.exit}
+                variants={pageVariants}
+              >
+                {children}
+              </motion.div>
+            </AnimatePresence>
+          </main>
+        </div>
       </div>
-    </div>
+    </ToastProvider>
   );
 }

@@ -19,8 +19,10 @@ import {
   type TicketPayload,
   type TicketUpdatePayload,
 } from "../services/ticketService";
+import { getTechnicians } from "../services/userService";
 
 import type { Ticket, WorkflowActions } from "../types/ticket";
+import type { Technician } from "../services/userService";
 
 export default function useTickets() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -173,10 +175,11 @@ export default function useTickets() {
   // Mark Pending
   // ===================================
   const markTicketPending = async (
-    ticketId: number
+    ticketId: number,
+    reason: string
   ) => {
     try {
-      await markPending(ticketId);
+      await markPending(ticketId, reason);
       await loadTickets();
     } catch (error) {
       console.error("Mark pending failed:", error);
@@ -269,6 +272,18 @@ export default function useTickets() {
   };
 
   // ===================================
+  // Get Technicians
+  // ===================================
+  const fetchTechnicians = async (): Promise<Technician[]> => {
+    try {
+      return await getTechnicians();
+    } catch (error) {
+      console.error("Failed to fetch technicians:", error);
+      return [];
+    }
+  };
+
+  // ===================================
   // Update Status (Legacy)
   // ===================================
   const changeStatus = async (
@@ -348,6 +363,7 @@ export default function useTickets() {
     closeTicketAction,
     escalateTicketAction,
     fetchWorkflowActions,
+    fetchTechnicians,
     changeStatus,
 
     search,

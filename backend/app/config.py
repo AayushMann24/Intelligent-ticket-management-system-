@@ -22,6 +22,7 @@ class Settings(BaseSettings):
 
     # File Uploads
     upload_dir: str = Field(default="./uploads", description="Directory for file uploads")
+    max_upload_size_mb: int = Field(default=10, description="Maximum attachment size in megabytes")
 
     # SLA Monitor (Phase 2C-2)
     sla_monitor_enabled: bool = Field(default=True, description="Enable SLA background monitor")

@@ -67,6 +67,13 @@ class TicketUnassign(BaseModel):
 
 
 # -----------------------------
+# Mark Pending
+# -----------------------------
+class TicketMarkPending(BaseModel):
+    reason: str
+
+
+# -----------------------------
 # Resolve Ticket
 # -----------------------------
 class TicketResolve(BaseModel):

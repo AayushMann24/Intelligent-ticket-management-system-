@@ -11,6 +11,7 @@ from app.schemas.notification import (
     UnreadCountResponse,
 )
 from app.utils.logging_config import get_logger
+from app.services.preferences_service import is_in_app_notifications_enabled
 
 logger = get_logger(__name__)
 
@@ -26,10 +27,13 @@ def create_notification(
     title: str,
     message: str,
     ticket_id: Optional[int] = None,
-) -> NotificationResponse:
+) -> Optional[NotificationResponse]:
     """
     Create a new notification for a user.
-    
+
+    In-app notifications are only created when the recipient has in-app
+    notifications enabled. Users without a preferences row default to enabled.
+
     Args:
         db: Database session
         recipient_id: ID of the user who should receive the notification
@@ -37,10 +41,11 @@ def create_notification(
         title: Short title for the notification
         message: Detailed message
         ticket_id: Optional ticket ID related to the notification
-        
+
     Returns:
-        The created notification
-        
+        The created notification, or None if the recipient has disabled
+        in-app notifications
+
     Raises:
         HTTPException: If recipient does not exist
     """
@@ -52,6 +57,15 @@ def create_notification(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Recipient user not found"
         )
+
+    # Respect the recipient's in-app notification preference. Absence of a
+    # preference row means enabled (documented default), so nothing is written.
+    if not is_in_app_notifications_enabled(db, recipient_id):
+        logger.info(
+            f"In-app notifications disabled for user {recipient_id}; "
+            f"skipping {notification_type.value} notification"
+        )
+        return None
 
     notification = Notification(
         recipient_id=recipient_id,

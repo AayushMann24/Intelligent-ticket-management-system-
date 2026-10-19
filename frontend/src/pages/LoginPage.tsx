@@ -110,6 +110,24 @@ export default function LoginPage() {
             </motion.p>
           </motion.div>
 
+          {/* Post password-change notice */}
+          <AnimatePresence>
+            {(location.state as { passwordChanged?: boolean } | null)
+              ?.passwordChanged && (
+              <motion.div
+                key="password-changed"
+                className="mb-5 rounded-lg border border-emerald-600 bg-emerald-900/30 p-3 text-sm text-emerald-300"
+                initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                transition={{ duration: 0.2 }}
+              >
+                Your password was changed successfully. Please sign in again
+                with your new password.
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Email */}
           <motion.div className="relative mb-5" variants={itemVariants}>
             <motion.div

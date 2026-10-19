@@ -36,6 +36,7 @@ export default function TicketsPage() {
     addTicket,
     editTicket,
     removeTicket,
+    reloadTickets,
   } = useTickets();
 
   const [selectedTicket, setSelectedTicket] =
@@ -148,6 +149,7 @@ export default function TicketsPage() {
         open={isViewOpen}
         ticket={selectedTicket}
         onClose={() => setIsViewOpen(false)}
+        onRefresh={reloadTickets}
       />
 
       <DeleteConfirmModal

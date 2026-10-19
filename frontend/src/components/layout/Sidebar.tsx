@@ -43,10 +43,10 @@ export default function Sidebar() {
           { title: "Users", path: "/users", icon: Users },
           { title: "Analytics", path: "/analytics", icon: BarChart3 },
           { title: "Reports", path: "/reports", icon: FileText },
-          { title: "Settings", path: "/settings", icon: Settings },
         ]
       : []),
     { title: "AI Assistant", path: "/assistant", icon: Bot },
+    { title: "Settings", path: "/settings", icon: Settings },
   ];
 
   const handleLogout = () => {

@@ -141,17 +141,3 @@ def _can_delete_attachment(user_id: int, user_role: str, attachment, ticket) -> 
     if attachment.uploaded_by == user_id:
         return True
     return False
-
-
-def _can_upload_attachment(user_id: int, user_role: str, ticket) -> bool:
-    """Check if user can upload attachments to this ticket."""
-    # Admin can upload to any ticket
-    if user_role == "Admin":
-        return True
-    # Creator can upload
-    if ticket.created_by == user_id:
-        return True
-    # Assignee can upload
-    if ticket.assigned_to == user_id:
-        return True
-    return False

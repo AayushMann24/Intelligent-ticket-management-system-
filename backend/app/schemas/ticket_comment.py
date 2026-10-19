@@ -88,21 +88,12 @@ class TicketHistoryListResponse(BaseModel):
 # ================================
 # TicketAttachment Schemas
 # ================================
-class TicketAttachmentCreate(BaseModel):
-    ticket_id: int
-    original_filename: str
-    stored_filename: str
-    content_type: str
-    file_size: int
-
-
 class TicketAttachmentResponse(BaseModel):
     id: int
     ticket_id: int
     uploaded_by: int
     uploader_name: Optional[str] = None
     original_filename: str
-    stored_filename: str
     content_type: str
     file_size: int
     created_at: datetime

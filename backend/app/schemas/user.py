@@ -46,3 +46,8 @@ class UserResponse(BaseModel):
 
 class UserRoleUpdate(BaseModel):
     role: UserRole
+
+
+class PasswordChangeRequest(BaseModel):
+    current_password: str
+    new_password: str = Field(..., min_length=8)

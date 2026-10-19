@@ -23,6 +23,7 @@ from app.models.ticket_comment import TicketHistory, HistoryEventType
 from app.services.notification_service import create_notification
 from app.services.ticket_history_service import record_history
 from app.services.email_provider import send_email, EmailResult
+from app.services.preferences_service import is_email_notifications_enabled
 from app.utils.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -212,6 +213,10 @@ def create_escalation_notification(
             message=message,
             ticket_id=ticket.id,
         )
+        # create_notification returns None when the recipient has disabled
+        # in-app notifications; treat that the same as notifications disabled.
+        if notification is None:
+            return None
         return notification.id
     except Exception as e:
         logger.error(f"Failed to create escalation notification: {e}")
@@ -281,15 +286,30 @@ async def send_escalation_email(
     recipient: User,
     event_type: EscalationEventType,
     rule: EscalationRule,
+    db: Optional[Session] = None,
 ) -> EmailResult:
     """
     Send escalation email using the email provider abstraction.
     Email failure does NOT prevent escalation from being recorded.
+
+    Email is only sent when BOTH the rule's ``email_enabled`` flag and the
+    recipient's ``email_notifications_enabled`` preference are true. When no
+    preference row exists the recipient defaults to enabled. ``db`` is optional
+    only so existing callers/tests remain source-compatible; when omitted the
+    recipient preference check is skipped and the recipient is treated as
+    enabled.
     """
     # Check if emails are enabled for this rule
     if not rule.email_enabled:
         return EmailResult(success=False, error="Email notifications disabled for this rule")
-    
+
+    # Respect the recipient's email notification preference (default: enabled)
+    if db is not None and not is_email_notifications_enabled(db, recipient.id):
+        return EmailResult(
+            success=False,
+            error="Email notifications disabled by recipient preferences",
+        )
+
     if not recipient.email:
         logger.warning(f"Recipient {recipient.id} has no email address, skipping email")
         return EmailResult(success=False, error="Recipient has no email address")
@@ -426,7 +446,7 @@ async def process_escalation(
 
     # Send email if enabled
     if rule.email_enabled:
-        email_result = await send_escalation_email(ticket, recipient, event_type, rule)
+        email_result = await send_escalation_email(ticket, recipient, event_type, rule, db=db)
         escalation_record.email_sent = email_result.success
         if not email_result.success:
             escalation_record.email_error = email_result.error

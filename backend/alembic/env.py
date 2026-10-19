@@ -21,6 +21,7 @@ import app.models.escalation
 import app.models.refresh_token
 import app.models.knowledge
 import app.models.knowledge_chunk
+import app.models.user_preferences
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

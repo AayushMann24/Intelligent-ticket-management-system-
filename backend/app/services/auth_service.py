@@ -217,6 +217,47 @@ def logout_user(db: Session, user_id: int):
 
 
 # ==========================================
+# Change Password
+# ==========================================
+def change_password(
+    db: Session,
+    user_id: int,
+    current_password: str,
+    new_password: str,
+):
+    """Change a user's password after verifying the current one.
+
+    On success the new password is hashed with the existing bcrypt helper and
+    every refresh token for the user is revoked, forcing re-authentication.
+
+    Raises:
+        ValueError: If the user does not exist or the current password is wrong.
+    """
+    user = (
+        db.query(User)
+        .filter(User.id == user_id, User.is_deleted == False)
+        .first()
+    )
+
+    if not user:
+        raise ValueError("User not found")
+
+    if not verify_password(current_password, user.password):
+        raise ValueError("Current password is incorrect")
+
+    user.password = hash_password(new_password)
+    user.updated_at = datetime.now(timezone.utc)
+    db.commit()
+
+    # Revoke all refresh tokens so existing sessions must re-authenticate.
+    _revoke_all_user_tokens(db, user_id)
+
+    return {
+        "message": "Password changed successfully. Please log in again with your new password."
+    }
+
+
+# ==========================================
 # Revoke Specific Refresh Token
 # ==========================================
 def revoke_refresh_token(db: Session, refresh_token: str):

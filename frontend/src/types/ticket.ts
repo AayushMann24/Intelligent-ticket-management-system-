@@ -66,6 +66,8 @@ export interface Ticket {
 
   assignment_reason?: string;
 
+  pending_reason?: string;
+
   // Resolution (Phase 2B)
   resolution_summary?: string;
   resolved_at?: string;
@@ -144,6 +146,10 @@ export interface AssignPayload {
   assigned_to: number;
 }
 
+export interface MarkPendingPayload {
+  reason: string;
+}
+
 export interface ResolvePayload {
   resolution_summary: string;
 }
@@ -179,7 +185,6 @@ export interface TicketAttachment {
   uploaded_by: number;
   uploader_name?: string;
   original_filename: string;
-  stored_filename: string;
   content_type: string;
   file_size: number;
   created_at: string;

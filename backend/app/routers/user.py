@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database.connection import get_db
@@ -8,10 +8,16 @@ from app.dependencies.roles import (
     require_authenticated_user,
 )
 from app.dependencies.csrf import csrf_protect
+from app.dependencies.rate_limit import rate_limit_dependency
 
 from app.schemas.user import (
     UserResponse,
     UserRoleUpdate,
+    PasswordChangeRequest,
+)
+from app.schemas.preferences import (
+    PreferencesResponse,
+    PreferencesUpdate,
 )
 
 from app.services.user_service import (
@@ -21,6 +27,11 @@ from app.services.user_service import (
     get_current_user,
     get_technicians,
 )
+from app.services.preferences_service import (
+    get_or_create_preferences,
+    update_preferences,
+)
+from app.services.auth_service import change_password
 
 router = APIRouter(
     prefix="/users",
@@ -42,6 +53,71 @@ def current_user(
         db,
         user["id"],
     )
+
+
+# ==================================================
+# Current User Preferences
+# ==================================================
+@router.get(
+    "/me/preferences",
+    response_model=PreferencesResponse,
+)
+def get_my_preferences(
+    db: Session = Depends(get_db),
+    user=Depends(require_authenticated_user),
+):
+    """Return the authenticated user's preferences (creating defaults if absent)."""
+    return get_or_create_preferences(
+        db,
+        user["id"],
+    )
+
+
+@router.put(
+    "/me/preferences",
+    response_model=PreferencesResponse,
+    dependencies=[Depends(csrf_protect)],
+)
+def update_my_preferences(
+    data: PreferencesUpdate,
+    db: Session = Depends(get_db),
+    user=Depends(require_authenticated_user),
+):
+    """Update the authenticated user's preferences (partial update)."""
+    updates = data.model_dump(exclude_unset=True)
+    return update_preferences(
+        db,
+        user["id"],
+        updates,
+    )
+
+
+# ==================================================
+# Change Current User Password
+# ==================================================
+@router.put(
+    "/me/password",
+    response_model=dict,
+    dependencies=[Depends(csrf_protect), Depends(rate_limit_dependency)],
+)
+def change_my_password(
+    data: PasswordChangeRequest,
+    db: Session = Depends(get_db),
+    user=Depends(require_authenticated_user),
+):
+    """Change the authenticated user's password and revoke refresh tokens."""
+    try:
+        return change_password(
+            db,
+            user["id"],
+            data.current_password,
+            data.new_password,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        )
 
 
 # ==================================================

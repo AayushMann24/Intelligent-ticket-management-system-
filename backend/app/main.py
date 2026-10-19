@@ -7,6 +7,7 @@ import app.models.ticket
 import app.models.notification
 import app.models.escalation
 import app.models.knowledge
+import app.models.user_preferences
 
 from app.dependencies.auth import verify_token
 

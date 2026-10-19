@@ -1,4 +1,5 @@
 import api from "./api";
+import type { AxiosProgressEvent } from "axios";
 import type { 
   TicketCommentListResponse, 
   TimelineResponse, 
@@ -130,11 +131,12 @@ export async function startWork(
 
 // --- Mark Pending ---
 export async function markPending(
-  ticketId: number
+  ticketId: number,
+  reason: string
 ) {
   const response = await api.post(
     `/tickets/${ticketId}/mark-pending`,
-    {}
+    { reason }
   );
   return response.data;
 }
@@ -279,12 +281,17 @@ export async function getAttachments(
 
 export async function uploadAttachment(
   ticketId: number,
-  file: File
+  file: File,
+  onProgress?: (percent: number) => void
 ) {
   const formData = new FormData();
   formData.append("file", file);
   const response = await api.post<TicketAttachment>(`/tickets/${ticketId}/attachments`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
+    onUploadProgress: (event: AxiosProgressEvent) => {
+      if (!onProgress || !event.total) return;
+      onProgress(Math.round((event.loaded / event.total) * 100));
+    },
   });
   return response.data;
 }

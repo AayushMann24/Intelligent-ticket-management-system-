@@ -99,6 +99,11 @@ class Ticket(Base):
         nullable=True,
     )
 
+    pending_reason = Column(
+        Text,
+        nullable=True,
+    )
+
     # =====================================================
     # Ticket Status
     # =====================================================
