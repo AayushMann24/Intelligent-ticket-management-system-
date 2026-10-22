@@ -28,8 +28,9 @@ from sqlalchemy import text
 from app.database.connection import SessionLocal
 from app.utils.exception_handlers import register_exception_handlers
 from app.utils.logging_config import setup_logging
-from app.services.sla_scheduler import sla_scheduler_lifespan
+from app.services.sla_scheduler import sla_scheduler_lifespan, get_scheduler_status
 from app.utils.security_headers import SecurityHeadersMiddleware
+from app.utils.request_id import RequestIdMiddleware
 
 # Initialize structured logging
 setup_logging()
@@ -39,7 +40,10 @@ app = FastAPI(lifespan=sla_scheduler_lifespan)
 # Register global exception handlers
 register_exception_handlers(app)
 
-# Security Headers Middleware - added FIRST to wrap all responses including errors
+# Request ID Middleware - added FIRST to ensure all requests get an ID
+app.add_middleware(RequestIdMiddleware)
+
+# Security Headers Middleware - added early to wrap all responses including errors
 if settings.security_headers_enabled:
     app.add_middleware(SecurityHeadersMiddleware)
 
@@ -97,16 +101,48 @@ def profile(user=Depends(verify_token)):
 
 @app.get("/health")
 def health_check():
-    return {"status": "healthy"}
+    """Liveness probe - confirms the application process is responsive.
+    
+    This endpoint should be lightweight and not check external dependencies.
+    Used by container orchestrators to determine if the process is alive.
+    """
+    return {
+        "status": "healthy",
+        "service": "itms-backend",
+    }
 
 
 @app.get("/ready")
 def readiness_check():
+    """Readiness probe - verifies required dependencies are available.
+    
+    Checks database connectivity and returns appropriate HTTP status codes.
+    Used by container orchestrators to determine if the service can receive traffic.
+    """
     try:
         db = SessionLocal()
         db.execute(text("SELECT 1"))
         db.close()
-        return {"status": "ready"}
+        
+        # Check SLA scheduler status if enabled
+        scheduler_status = get_scheduler_status()
+        
+        return {
+            "status": "ready",
+            "service": "itms-backend",
+            "database": "connected",
+            "scheduler": "running" if scheduler_status["running"] else "stopped",
+        }
     except Exception as e:
-        return {"status": "not ready", "detail": str(e)}
+        # Log the error but don't expose details in production
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error("Readiness check failed", extra={"error": str(e)})
+        
+        from fastapi import Response
+        return Response(
+            content='{"status": "not ready", "service": "itms-backend", "database": "disconnected"}',
+            status_code=503,
+            media_type="application/json",
+        )
 # Moved imports to top of file

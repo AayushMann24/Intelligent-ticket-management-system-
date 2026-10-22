@@ -86,6 +86,8 @@ ollama==0.6.2
 
 openai==2.52.0
 
+google-genai==2.32.0
+
 orjson==3.11.9
 
 ormsgpack==1.12.2
@@ -97,6 +99,8 @@ passlib==1.7.4
 propcache==0.5.2
 
 psycopg2-binary==2.9.12
+
+pgvector==0.2.5
 
 pyasn1==0.6.4
 

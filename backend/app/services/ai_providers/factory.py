@@ -7,6 +7,7 @@ from app.schemas.ai_gateway import AIProviderConfig
 from app.services.ai_providers.base import AIProvider as AIProviderBase, AIProviderError
 from app.services.ai_providers.gemini import GeminiProvider
 from app.services.ai_providers.ollama import OllamaProvider
+from app.services.ai_providers.mock import MockProvider
 
 
 # Global provider instance cache
@@ -35,6 +36,14 @@ def get_provider_config() -> AIProviderConfig:
             max_output_tokens=getattr(settings, "ai_max_output_tokens", 4096),
             timeout_seconds=getattr(settings, "ai_timeout_seconds", 30),
         )
+    elif provider_name == "mock":
+        return AIProviderConfig(
+            provider="mock",
+            model="mock",
+            temperature=getattr(settings, "ai_temperature", 0.0),
+            max_output_tokens=getattr(settings, "ai_max_output_tokens", 4096),
+            timeout_seconds=getattr(settings, "ai_timeout_seconds", 30),
+        )
     else:
         return AIProviderConfig(
             provider="ollama",
@@ -54,6 +63,8 @@ def create_provider(config: Optional[AIProviderConfig] = None) -> AIProviderBase
         return GeminiProvider(config)
     elif config.provider == "ollama":
         return OllamaProvider(config)
+    elif config.provider == "mock":
+        return MockProvider(config)
     else:
         raise AIProviderError(
             code="UNKNOWN_PROVIDER",

@@ -99,11 +99,11 @@ TRANSITION_PERMISSIONS = {
     },
     TicketStatus.RESOLVED: {
         TicketStatus.CLOSED: ["Admin", "Technician"],
-        TicketStatus.OPEN: ["Admin", "Technician"],
+        TicketStatus.OPEN: ["Admin", "Technician", "Employee"],  # Reopen - creator (Employee) can reopen
         TicketStatus.IN_PROGRESS: ["Admin", "Technician"],
     },
     TicketStatus.CLOSED: {
-        TicketStatus.OPEN: ["Admin"],
+        TicketStatus.OPEN: ["Admin", "Technician", "Employee"],  # Reopen after closure - creator (Employee) can reopen
     },
 }
 
@@ -233,11 +233,26 @@ def create_ticket(db: Session, ticket_data, user_id: int):
 
     # Use AI service if available, otherwise use defaults
     if AIService:
-        ai_result = AIService.analyze_ticket(
-            title=ticket_data.title,
-            description=ticket_data.description,
-            technicians=technicians,
-        )
+        try:
+            ai_result = AIService.analyze_ticket(
+                title=ticket_data.title,
+                description=ticket_data.description,
+                technicians=technicians,
+            )
+        except Exception as e:
+            # AI service failed (e.g., Ollama not available), use defaults
+            import logging
+            logging.getLogger(__name__).warning(f"AI analysis failed, using defaults: {e}")
+            ai_result = {
+                "category": "Other",
+                "subcategory": "General",
+                "keywords": [],
+                "confidence": 0.0,
+                "priority": ticket_data.priority,
+                "priority_reason": "Default priority (AI unavailable)",
+                "assigned_to": None,
+                "assignment_reason": "AI service unavailable",
+            }
     else:
         # Default values for testing
         ai_result = {

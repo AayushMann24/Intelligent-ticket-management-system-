@@ -56,5 +56,5 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Entrypoint runs migrations then starts the application
 ENTRYPOINT ["/app/entrypoint.sh"]
 
-# Run the application with Uvicorn - exactly one worker
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+# Default command - can be overridden to run 'migrate' only
+CMD ["start"]
